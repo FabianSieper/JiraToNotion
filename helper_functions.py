@@ -198,6 +198,9 @@ def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
 
     print_info("Creating or fetching sprint entry for sprint name " + sprint_name)
 
+    if "CaVORS" in sprint_name:
+        sprint_name = sprint_name.replace("CaVORS-", "CV-")
+
     # Check if the sprint page already exists
     existing_sprint_pages = notion_client.databases.query(
         database_id=sprints_database_id,
