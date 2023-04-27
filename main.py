@@ -45,7 +45,7 @@ def setup():
     return notion, jira, database_id, sprints_database_id, epics_database_id
 
 
-def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_titles):
+def add_notion_entries_loop(jira, notion, database_id, issues, existing_titles):
     
     global amount_issues_skipped
 
@@ -63,12 +63,12 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
         # Get or create sprint pages in the sprints database, but only if Sprint name has prefix CAVORS_SPRINT_PREFIX
         sprint_pages = []
         if issue_sprints:
-            sprint_pages = [{"id": get_or_create_sprint_page(notion, sprints_database_id, sprint)} for sprint in issue_sprints if sprint.startswith(CAVORS_SPRINT_PREFIX)]
+            sprint_pages = [{"id": get_or_create_sprint_page(notion, sprint)} for sprint in issue_sprints if sprint.startswith(CAVORS_SPRINT_PREFIX)]
             
         # Get or create epic pages in the epics database
         epic_page = None
         if epic_ispi:
-            epic_page = [{"id": get_or_create_epic_page(jira, notion, epic_database_id, epic_ispi)}]
+            epic_page = [{"id": get_or_create_epic_page(jira, notion, epic_ispi)}]
 
         # Create page in notion databse
         new_page = {
@@ -92,7 +92,7 @@ def main():
 
     existing_titles = get_already_migrated_entries(notion, database_id, issues)
 
-    add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_titles)
+    add_notion_entries_loop(jira, notion, database_id, issues, existing_titles)
 
     print_info("Amount of JIRA issues added to notion database: " + str(len(issues) - amount_issues_skipped))
 

@@ -5,6 +5,8 @@ from config import (
     AMOUNT_JIRA_RESULTS,
     EPICS_DATABASE_URL,
     EPICS_DATABASE_NAME,
+    SPRINTS_DATABASE_URL,
+    SPRINTS_DATABASE_NAME,
     NOTION_TEXT_FIELD_MAX_CHARS,
     JIRA_SERVER_URL,
 )
@@ -65,47 +67,50 @@ def print_issue_information(issue, advanced = False):
         for field_name, field_value in issue.fields.__dict__.items():
             print(f"{field_name}: {field_value}")
 
-def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
 
-    print_info("Creating or fetching epic entry for epic " + epic_ispi)
+def get_or_create_notion_page(notion_client, database_url, database_name, filter_params, new_page_properties):
+    # Retrieve the database
+    database_id = get_database_id(notion_client, database_url, database_name)
 
-    # Retrieve the epics database
-    epic_database_id = get_database_id(notion_client, EPICS_DATABASE_URL, EPICS_DATABASE_NAME)
-
-    # Check if the epic page already exists
-    existing_epic_pages = notion_client.databases.query(
-        database_id=epic_database_id,
-        filter={
-            "property": "ISPI",
-            "title": {
-                "equals": epic_ispi,
-            },
-        }
+    # Check if the page already exists
+    existing_pages = notion_client.databases.query(
+        database_id=database_id,
+        filter=filter_params
     ).get("results")
 
-    if existing_epic_pages:
-        return existing_epic_pages[0]["id"]
+    if existing_pages:
+        return existing_pages[0]["id"]
     else:
-        # Create a new sprint page
-        
-        jql_query = create_jira_jql_query(epic_ispi)
-        # Get JIRA issues using the specified filter
-        epic = get_jira_issues_for_jql_query(jira, jql_query)[0]
-
-        _, issue_summary, _, _, issue_url, issue_priority, _, _ = get_issue_information(epic)
-
-        new_epic_page = {
-            "Name": {"title": [{"text": {"content": issue_summary}}]},
-            "Epic URL": {"url": issue_url},
-            "Priority": {"select": {"name": str(issue_priority)}},
-            "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]},
+        # Create a new page
+        new_page_id = notion_client.pages.create(parent={"database_id": database_id}, properties=new_page_properties).get("id")
+        return new_page_id
 
 
+def get_or_create_epic_page(jira, notion_client, epic_ispi):
+    print_info("Creating or fetching epic entry for epic " + epic_ispi)
 
-        }
+    epic_database_url = EPICS_DATABASE_URL
+    epic_database_name = EPICS_DATABASE_NAME
 
-        new_epic_page_id = notion_client.pages.create(parent={"database_id": epic_database_id}, properties=new_epic_page).get("id")
-        return new_epic_page_id
+    filter_params = {
+        "property": "ISPI",
+        "title": {
+            "equals": epic_ispi,
+        },
+    }
+
+    jql_query = create_jira_jql_query(epic_ispi)
+    epic = get_jira_issues_for_jql_query(jira, jql_query)[0]
+    _, issue_summary, _, _, issue_url, issue_priority, _, _ = get_issue_information(epic)
+
+    new_page_properties = {
+        "Name": {"title": [{"text": {"content": issue_summary}}]},
+        "Epic URL": {"url": issue_url},
+        "Priority": {"select": {"name": str(issue_priority)}},
+        "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]},
+    }
+
+    return get_or_create_notion_page(notion_client, epic_database_url, epic_database_name, filter_params, new_page_properties)
 
 
 def get_already_migrated_entries(notion, database_id, issues):
@@ -194,33 +199,27 @@ def get_jira_issues(jira, notion_client):
 
     return issues
 
-def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
-
+def get_or_create_sprint_page(notion_client, sprint_name):
     print_info("Creating or fetching sprint entry for sprint name " + sprint_name)
 
     if "CaVORS" in sprint_name:
         sprint_name = sprint_name.replace("CaVORS-", "CV-")
 
-    # Check if the sprint page already exists
-    existing_sprint_pages = notion_client.databases.query(
-        database_id=sprints_database_id,
-        filter={
-            "property": "Name",
-            "title": {
-                "equals": sprint_name,
-            },
-        }
-    ).get("results")
+    sprints_database_url = SPRINTS_DATABASE_URL
+    sprints_database_name = SPRINTS_DATABASE_NAME
 
-    if existing_sprint_pages:
-        return existing_sprint_pages[0]["id"]
-    else:
-        # Create a new sprint page
-        new_sprint_page = {
-            "Name": {"title": [{"text": {"content": sprint_name}}]}
-        }
-        new_sprint_page_id = notion_client.pages.create(parent={"database_id": sprints_database_id}, properties=new_sprint_page).get("id")
-        return new_sprint_page_id
+    filter_params = {
+        "property": "Name",
+        "title": {
+            "equals": sprint_name,
+        },
+    }
+
+    new_page_properties = {
+        "Name": {"title": [{"text": {"content": sprint_name}}]}
+    }
+
+    return get_or_create_notion_page(notion_client, sprints_database_url, sprints_database_name, filter_params, new_page_properties)
 
 
 def get_database_id(notion_client, database_url, database_name):
