@@ -45,17 +45,17 @@ def setup():
     return notion, jira, database_id, sprints_database_id, epics_database_id
 
 
-def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_titles):
+def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis):
     
     global amount_issues_skipped
 
     # Add JIRA issues to the Notion database if not already present
     for issue in tqdm(issues, "Writing issues to notion database ..."):
 
-        _, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi = get_issue_information(issue)
+        issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi = get_issue_information(issue)
 
         # Skip issues
-        if isIssueSkipped(issue, existing_titles):
+        if isIssueSkipped(issue, existing_ispis):
             print_info("Skipped JIRA issue '" + issue_summary + "'")
             amount_issues_skipped += 1
             continue
@@ -72,13 +72,15 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 
         # Create page in notion databse
         new_page = {
-            "Story": {"title": [{"text": {"content": issue_summary}}]},
+            "Summary": {"title": [{"text": {"content": issue_summary}}]},
             "Status": {"status": {"name": issue_status}},
-            "Story URL": {"url": issue_url},
+            "URL": {"url": issue_url},
             "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
+            "ISPI": {"rich_text": [{"text": {"content": issue_ispi}}]},
             "Priority": {"select": {"name": str(issue_priority)}},
             "Sprint": {"relation": sprint_pages},
-            "Epic": {"relation": epic_page if epic_page and epic_page[0]["id"] else []}
+            "Epic": {"relation": epic_page if epic_page and epic_page[0]["id"] else []},
+            "Zeitlicher Fortschritt": {"number": 0}
         }
 
         notion.pages.create(parent={"database_id": database_id}, properties=new_page).get("id")
@@ -90,9 +92,9 @@ def main():
 
     issues = get_jira_issues(jira, notion)
 
-    existing_titles = get_already_migrated_entries(notion, database_id, issues)
+    existing_ispis = get_already_migrated_entries(notion, database_id, issues)
 
-    add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_titles)
+    add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis)
 
     print_info("Amount of JIRA issues added to notion database: " + str(len(issues) - amount_issues_skipped))
 

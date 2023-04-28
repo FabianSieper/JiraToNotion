@@ -20,28 +20,28 @@ def throw_error(text):
 
 def get_issue_information(issue):
 
-    issue_key = issue.key
+    issue_ispi = issue.key
     issue_summary = issue.fields.summary
     issue_status = issue.fields.status.name
     issue_description = issue.fields.description 
     issue_priority = issue.fields.priority
     issue_sprints = [s.split('name=')[1].split(',')[0] for s in issue.fields.customfield_10000] if issue.fields.customfield_10000 else None
-    issue_url = JIRA_SERVER_URL + "/browse/" + issue_key
+    issue_url = JIRA_SERVER_URL + "/browse/" + issue_ispi
     epic_ispi = issue.fields.customfield_10001
 
     # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field
     if len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
         issue_description = issue_description[0:NOTION_TEXT_FIELD_MAX_CHARS]
 
-    return issue_key, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi
+    return issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi
 
 
 def isIssueSkipped(issue, existing_titles):
 
-    _, issue_summary, _, _, issue_url, _, _, _ = get_issue_information(issue)
+    issue_ispi, issue_summary, _, _, _, _, _, _ = get_issue_information(issue)
 
     # Skip if issue was already sent to notion
-    if issue_url in existing_titles:
+    if issue_ispi in existing_titles:
         print_info("Skipping JIRA issue, as the issue summary already exists in the Notion db: " + issue_summary)
         return True
     
@@ -50,9 +50,9 @@ def isIssueSkipped(issue, existing_titles):
 
 def print_issue_information(issue, advanced = False):
 
-    issue_key, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic = get_issue_information(issue)
+    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic = get_issue_information(issue)
 
-    print("ISPI:", issue_key)
+    print("ISPI:", issue_ispi)
     print("Issue summary:", issue_summary)
     print("Issue URL:", issue_url)
     print("Sprint:", issue_sprints)
@@ -96,7 +96,7 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
 
         new_epic_page = {
             "Name": {"title": [{"text": {"content": issue_summary}}]},
-            "Epic URL": {"url": issue_url},
+            "URL": {"url": issue_url},
             "Priority": {"select": {"name": str(issue_priority)}},
             "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]},
 
@@ -115,11 +115,9 @@ def get_already_migrated_entries(notion, database_id, issues):
 
     # Create list of JIRA issues, which were already added to notion
     print_info("Detecting possible duplicate entries.")
-    already_contained_issue_urls = {entry["properties"]["Story URL"]["url"] for entry in database_entries["results"]}
+    already_contained_issue_ispis = {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in database_entries["results"]}
 
-    existing_titles = [get_issue_information(issue)[4] for issue in issues if get_issue_information(issue)[4] in already_contained_issue_urls]
-
-    return existing_titles
+    return already_contained_issue_ispis
 
 
 def get_issues_for_epic(jira, epic):
@@ -148,8 +146,8 @@ def get_issue_list_from_notion_epics(jira, notion_client):
     existing_epic_pages = notion_client.databases.query(
         database_id=epic_database_id
     ).get("results")
-    
-    epic_list = [page["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for page in existing_epic_pages]
+
+    epic_list = [page["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for page in existing_epic_pages if len(page["properties"]["ISPI"]["rich_text"]) > 0]
 
     issue_list = get_issue_list_from_epics(jira, epic_list)
 
