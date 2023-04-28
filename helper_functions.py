@@ -1,5 +1,6 @@
 import argparse
 from typing import List, Tuple
+from tqdm import tqdm
 
 from config import (
     AMOUNT_JIRA_RESULTS,
@@ -31,7 +32,7 @@ def get_jira_entry_information(issue):
     issue_assignee = issue.fields.assignee
 
     # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field
-    if len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
+    if issue_description and len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
         issue_description = issue_description[0:NOTION_TEXT_FIELD_MAX_CHARS]
 
     return issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi, issue_assignee
@@ -106,28 +107,30 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         return new_epic_page_id
 
 
-def get_already_migrated_entries(notion, database_id, issues):
-
+def get_already_migrated_entries(notion, database_id):
     # Retrieve existing pages in the Notion database
-    database_entries = notion.databases.query(database_id=database_id)
+    all_entries = []
+    start_cursor = None
+    page_size = 100
+
+    print_info("Detecting existing entries.")
+
+    while True:
+        result = notion.databases.query(database_id=database_id, start_cursor=start_cursor, page_size=page_size)
+        all_entries.extend(result["results"])
+
+        print_info("Fetching existing jira issues in Notion: " + str(len(all_entries)))
+        if "next_cursor" in result and result["next_cursor"]:
+            start_cursor = result["next_cursor"]
+        else:
+            break
 
     # Create list of JIRA issues, which were already added to notion
-    print_info("Detecting possible duplicate entries.")
-    try:
-        already_contained_issue_ispis = {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in database_entries["results"] if len(entry["properties"]["ISPI"]["rich_text"]) > 0}
-
-    except Exception as e:
-        print(e)
-
-        # Find error causing issue
-        for entry in database_entries["results"]:
-
-            if len(entry["properties"]["ISPI"]["rich_text"]) == 0:
-                print_info("Entry causing the error: " + str(entry["properties"]))
-
-        throw_error("Not able to get ISPI Information about already migrated notion entry.")
+    already_contained_issue_ispis = {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in all_entries if len(entry["properties"]["ISPI"]["rich_text"]) > 0}
 
     return already_contained_issue_ispis
+
+
 
 def get_issues_for_epics(jira, epics):
     epic_conditions = ' OR '.join([f'"Epic Link" = {epic}' for epic in epics])
@@ -182,18 +185,36 @@ def get_issue_list_from_notion_epics(jira, notion_client):
     
 
 
-def get_issue_list(jira, notion_client):
+def get_issue_list(jira, notion_client, database_id):
 
-    epics, issues = parse_cmd_args()
+    epics, issues, update_issues = parse_cmd_args()
     issue_list = []
     if epics:
         issue_list = get_issue_list_from_epics(jira, epics)
     elif issues:
         issue_list = issues
+    elif update_issues:
+        migrated_issue_ispis = get_already_migrated_entries(notion_client, database_id)
+        issue_list = get_jira_issues_for_ispis(jira, migrated_issue_ispis)
     else:
         issue_list = get_issue_list_from_notion_epics(jira, notion_client)
 
     return issue_list
+
+
+def get_jira_issues_for_ispis(jira, issue_ispis):
+
+    jql_query = create_jira_jql_query(issue_ispis)
+
+    # Get JIRA issues using the specified filter
+    issues = get_jira_issues_for_jql_query(jira, jql_query)
+
+    return issues
+
+def update_all_notion_issues(notion_client, database_id, jira_issues):
+
+    for jira_issue in tqdm(jira_issues, "Updating issues ... "):
+        update_notion_issue_status(notion_client, database_id, jira_issue)
 
 
 def create_jira_jql_query(issue_keys) -> str:
@@ -208,9 +229,9 @@ def get_jira_issues_for_jql_query(jira, jql_query):
 
     return jira.search_issues(jql_query, maxResults=AMOUNT_JIRA_RESULTS)
 
-def get_jira_issues(jira, notion_client):
+def get_jira_issues(jira, notion_client, database_id):
     
-    issue_list = get_issue_list(jira, notion_client)
+    issue_list = get_issue_list(jira, notion_client, database_id)
 
     jql_query = create_jira_jql_query(issue_list)
 
@@ -267,15 +288,48 @@ def get_database_id(notion_client, database_url, database_name):
     
     return temp_database_id
 
+def get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue):
+    # Replace "Issue_key" with the name of the property where you store the Jira issue key in Notion
+    jql_query = {
+        "property": "ISPI",
+        "title": {
+            "equals": jira_issue.key
+        }
+    }
+    response = notion_client.databases.query(database_id=database_id, filter={"and": [jql_query]})
+    results = response.get("results")
+    return results[0]["id"] if results else None
+
+def update_notion_issue_status(notion_client, database_id, jira_issue):
+    # Find the corresponding Notion page by Jira issue key
+    issue_ispi = get_jira_entry_information(jira_issue)[0]
+
+    notion_page_id = get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue)
+
+    if notion_page_id:
+        # Update the "Status" property of the Notion page with the Jira issue status
+        issue_status = jira_issue.fields.status.name
+        notion_client.pages.update(
+            notion_page_id,
+            properties={
+                "Status": {"status": {"name": issue_status}}
+            }
+        )
+    else:
+        print(f'No Notion page found for Jira issue: {jira_issue.key}')      
+
+
 def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser = argparse.ArgumentParser(description="Check for --epic and --issue arguments")
 
     parser.add_argument("--epics", nargs="*", help="List of epic arguments", default=[])
     parser.add_argument("--issues", nargs="*", help="List of issue arguments", default=[])
-
+    parser.add_argument("--update-issues", action="store_true", help="Update issues flag")
+                        
     args = parser.parse_args()
 
     epic_args = args.epics
     issue_args = args.issues
+    update_issues = args.update_issues
 
-    return epic_args, issue_args
+    return epic_args, issue_args, update_issues

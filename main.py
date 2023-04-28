@@ -87,16 +87,21 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 
 def main():
 
-
     notion, jira, database_id, sprints_database_id, epic_database_id = setup()
+    _, _, update_issues = parse_cmd_args()
+    issues = get_jira_issues(jira, notion, database_id)
 
-    issues = get_jira_issues(jira, notion)
+    if update_issues:
+        print_info("Updating Notion issues")
+        update_all_notion_issues(notion, database_id, issues)
+        print_info("Updated Notion issues")
 
-    existing_ispis = get_already_migrated_entries(notion, database_id, issues)
+    else:
 
-    add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis)
+        existing_ispis = get_already_migrated_entries(notion, database_id)
 
-    print_info("Amount of JIRA issues added to notion database: " + str(len(issues) - amount_issues_skipped))
+        add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis)
+        print_info("Amount of JIRA issues added to notion database: " + str(len(issues) - amount_issues_skipped))
 
 
 if __name__ == "__main__":

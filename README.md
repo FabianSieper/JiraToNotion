@@ -39,9 +39,16 @@ For this, you can execute the script as follows:
 ```
 python main.py
 ```
-This addes Issues to the Notion Issue databse, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Linked Sprints are added to the Notion Sprints database.
+This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Linked Sprints are added to the Notion Sprints database.
 
-#### 2. Add Issues by Epic ISPI
+#### 2. Update issues
+For this, you can execute the script as follows:
+```
+python main.py --update-issues
+```
+This updates the status of all issues in the Notion databse according to the status in Jira. No new Issues are added and no other properties are overwritten
+
+#### 3. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --epics ISPI-123456 ISPI-987654 
@@ -50,7 +57,7 @@ Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Epics.
 
 This takes all Issues linked to the Jira Epics and adds them to the Notion Issue database. The epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
 
-#### 3. Add Issues by Epic ISPI
+#### 4. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --issues ISPI-123456 ISPI-987654 
