@@ -18,7 +18,7 @@ def throw_error(text):
     print("[ERROR] -", text)
     exit()
 
-def get_issue_information(issue):
+def get_jira_entry_information(issue):
 
     issue_ispi = issue.key
     issue_summary = issue.fields.summary
@@ -28,17 +28,18 @@ def get_issue_information(issue):
     issue_sprints = [s.split('name=')[1].split(',')[0] for s in issue.fields.customfield_10000] if issue.fields.customfield_10000 else None
     issue_url = JIRA_SERVER_URL + "/browse/" + issue_ispi
     epic_ispi = issue.fields.customfield_10001
+    issue_assignee = issue.fields.assignee
 
     # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field
     if len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
         issue_description = issue_description[0:NOTION_TEXT_FIELD_MAX_CHARS]
 
-    return issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi
+    return issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi, issue_assignee
 
 
 def isIssueSkipped(issue, existing_titles):
 
-    issue_ispi, issue_summary, _, _, _, _, _, _ = get_issue_information(issue)
+    issue_ispi, issue_summary, _, _, _, _, _, _, _ = get_jira_entry_information(issue)
 
     # Skip if issue was already sent to notion
     if issue_ispi in existing_titles:
@@ -50,7 +51,7 @@ def isIssueSkipped(issue, existing_titles):
 
 def print_issue_information(issue, advanced = False):
 
-    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic = get_issue_information(issue)
+    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic, issue_assignee = get_jira_entry_information(issue)
 
     print("ISPI:", issue_ispi)
     print("Issue summary:", issue_summary)
@@ -92,16 +93,13 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         # Get JIRA issues using the specified filter
         epic = get_jira_issues_for_jql_query(jira, jql_query)[0]
 
-        _, issue_summary, _, _, issue_url, issue_priority, _, _ = get_issue_information(epic)
+        _, summary, _, description, url, _, _, _, _ = get_jira_entry_information(epic)
 
         new_epic_page = {
-            "Name": {"title": [{"text": {"content": issue_summary}}]},
-            "URL": {"url": issue_url},
-            "Priority": {"select": {"name": str(issue_priority)}},
+            "Name": {"title": [{"text": {"content": summary}}]},
+            "URL": {"url": url},
             "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]},
-
-
-
+            "Description": {"rich_text": [{"text": {"content": description if description else ""}}]},
         }
 
         new_epic_page_id = notion_client.pages.create(parent={"database_id": epic_database_id}, properties=new_epic_page).get("id")
@@ -115,19 +113,46 @@ def get_already_migrated_entries(notion, database_id, issues):
 
     # Create list of JIRA issues, which were already added to notion
     print_info("Detecting possible duplicate entries.")
-    already_contained_issue_ispis = {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in database_entries["results"]}
+    try:
+        already_contained_issue_ispis = {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in database_entries["results"] if len(entry["properties"]["ISPI"]["rich_text"]) > 0}
+
+    except Exception as e:
+        print(e)
+
+        # Find error causing issue
+        for entry in database_entries["results"]:
+
+            if len(entry["properties"]["ISPI"]["rich_text"]) == 0:
+                print_info("Entry causing the error: " + str(entry["properties"]))
+
+        throw_error("Not able to get ISPI Information about already migrated notion entry.")
 
     return already_contained_issue_ispis
 
+def get_issues_for_epics(jira, epics):
+    epic_conditions = ' OR '.join([f'"Epic Link" = {epic}' for epic in epics])
+    jql_query = f'({epic_conditions})'
 
-def get_issues_for_epic(jira, epic):
+    all_issues = []
+    start_at = 0
+    max_results = 100
 
-    jql_query = f'"Epic Link" = {epic}'
-    return jira.search_issues(jql_query)
+    while True:
+        issues = jira.search_issues(jql_query, startAt=start_at, maxResults=max_results)
+        if not issues:
+            break
+
+        all_issues.extend(issues)
+        start_at += max_results
+
+        print_info("Fetched jira issues for epics: " + str(len(all_issues)))
+
+    return all_issues
+
 
 def get_issue_list_from_epics(jira, epics):
 
-    issue_list = [issue for single_epic in epics for issue in get_issues_for_epic(jira, single_epic)]
+    issue_list = get_issues_for_epics(jira, epics)
 
     # Convert each jira issue to a ISPI- String
     issue_list = [str(issue) for issue in issue_list]
@@ -148,8 +173,10 @@ def get_issue_list_from_notion_epics(jira, notion_client):
     ).get("results")
 
     epic_list = [page["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for page in existing_epic_pages if len(page["properties"]["ISPI"]["rich_text"]) > 0]
+    print_info("Successfully fetched list of existing notion epic pages")
 
     issue_list = get_issue_list_from_epics(jira, epic_list)
+    print_info("Successfully fetched list of existing notion issue pages")
 
     return issue_list
     

@@ -52,7 +52,7 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
     # Add JIRA issues to the Notion database if not already present
     for issue in tqdm(issues, "Writing issues to notion database ..."):
 
-        issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi = get_issue_information(issue)
+        issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi, issue_assignee = get_jira_entry_information(issue)
 
         # Skip issues
         if isIssueSkipped(issue, existing_ispis):
