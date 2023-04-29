@@ -1,6 +1,5 @@
 import argparse
 from typing import List, Tuple
-
 from bin.config import *
 
 def print_info(text):
@@ -12,7 +11,7 @@ def throw_error(text):
     print("[ERROR] -", text)
     exit()
 
-def get_jira_entry_information(issue):
+def get_jira_issue_information(issue):
 
     issue_ispi = issue.key
     issue_summary = issue.fields.summary
@@ -33,7 +32,7 @@ def get_jira_entry_information(issue):
 
 def isIssueSkipped(issue, existing_titles):
 
-    issue_ispi, issue_summary, _, _, _, _, _, _, _ = get_jira_entry_information(issue)
+    issue_ispi, issue_summary, _, _, _, _, _, _, _ = get_jira_issue_information(issue)
 
     # Skip if issue was already sent to notion
     if issue_ispi in existing_titles:
@@ -45,7 +44,7 @@ def isIssueSkipped(issue, existing_titles):
 
 def print_issue_information(issue, advanced = False):
 
-    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic, issue_assignee = get_jira_entry_information(issue)
+    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic, issue_assignee = get_jira_issue_information(issue)
 
     print("ISPI:", issue_ispi)
     print("Issue summary:", issue_summary)
@@ -61,11 +60,11 @@ def print_issue_information(issue, advanced = False):
             print(f"{field_name}: {field_value}")
 
 
-def create_jira_jql_query(issue_keys) -> str:
+def create_OR_jira_jql_query(param_name, issue_keys) -> str:
     if isinstance(issue_keys, str):
         issue_keys = [issue_keys]
 
-    query = " OR ".join(f"key = {key}" for key in issue_keys)
+    query = " OR ".join(f"{param_name} = {key}" for key in issue_keys)
     return query
 
 

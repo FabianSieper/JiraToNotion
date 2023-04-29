@@ -93,7 +93,7 @@ def get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue):
 
 def update_notion_issue_status(notion_client, database_id, jira_issue):
     # Find the corresponding Notion page by Jira issue key
-    issue_ispi = get_jira_entry_information(jira_issue)[0]
+    issue_ispi = get_jira_issue_information(jira_issue)[0]
 
     notion_page_id = get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue)
 

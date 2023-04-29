@@ -10,7 +10,7 @@ The script will
 - Install all required python packages
 
 ## Configuration
-To configure the script to your Jira and Notion databases, replace the following values in the file `config.py`:
+To configure the script to your Jira and Notion databases, replace the following values in the file `bin/config.py`:
 - NOTION_API_KEY: Your Notion API key
 - NOTION_DATABASE_URL: The URL of your Notion database
 - NOTION_DATABASE_NAME: The name of your Notion database (default: "Tasks")
@@ -22,7 +22,7 @@ To configure the script to your Jira and Notion databases, replace the following
 - JIRA_USERNAME: Your JIRA username
 - JIRA_PASSWORD: Your JIRA password
 
-## Execution and ModesModes
+## Execution and Modes
 
 ### 1. Update
 For this, you can execute the script as follows:

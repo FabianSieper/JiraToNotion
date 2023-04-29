@@ -1,17 +1,15 @@
-from bin.helper_functions import print_info
+from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.config import *
 
-def get_issues_for_epics(jira, epics):
-    epic_conditions = ' OR '.join([f'"Epic Link" = {epic}' for epic in epics])
-    jql_query = f'({epic_conditions})'
+def get_all_jira_issues_for_query(jira, query):
 
     all_issues = []
     start_at = 0
     max_results = 100
 
     while True:
-        issues = jira.search_issues(jql_query, startAt=start_at, maxResults=max_results)
+        issues = jira.search_issues(query, startAt=start_at, maxResults=max_results)
         if not issues:
             break
 
@@ -23,27 +21,21 @@ def get_issues_for_epics(jira, epics):
     return all_issues
 
 
+def get_issue_list_from_ispis(jira, ispis, isEpic = False, convert_to_ispi_strings = True):
 
-def get_issue_list_from_epics(jira, epics):
+    if isinstance(ispis, str):
+        ispis = [ispis]
+    if not isinstance(ispis, list):
+        ispis = list(ispis)
 
-    issue_list = get_issues_for_epics(jira, epics)
+    if isEpic:
+        query = create_OR_jira_jql_query("Epic Link", ispis)
+    else:
+        query = create_OR_jira_jql_query("key", ispis)
 
-    # Convert each jira issue to a ISPI- String
-    issue_list = [str(issue) for issue in issue_list]
+    issue_list = get_all_jira_issues_for_query(jira, query)
+
+    if convert_to_ispi_strings:
+        issue_list = [str(issue) for issue in issue_list]
 
     return issue_list
-
-
-def get_jira_issues_for_jql_query(jira, jql_query):
-
-    return jira.search_issues(jql_query, maxResults=AMOUNT_JIRA_RESULTS)
-
-
-def get_jira_issues_for_ispis(jira, issue_ispis):
-
-    jql_query = create_jira_jql_query(issue_ispis)
-
-    # Get JIRA issues using the specified filter
-    issues = get_jira_issues_for_jql_query(jira, jql_query)
-
-    return issues

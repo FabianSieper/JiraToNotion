@@ -18,7 +18,7 @@ def get_issue_list_from_notion_epics(jira, notion_client):
     epic_list = [page["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for page in existing_epic_pages if len(page["properties"]["ISPI"]["rich_text"]) > 0]
     print_info("Successfully fetched list of existing notion epic pages")
 
-    issue_list = get_issue_list_from_epics(jira, epic_list)
+    issue_list = get_issue_list_from_ispis(jira, epic_list, isEpic=True, convert_to_ispi_strings=False)
     print_info("Successfully fetched list of existing notion issue pages")
 
     return issue_list
@@ -30,12 +30,12 @@ def get_issue_list(jira, notion_client, database_id):
     epics, issues, update_issues = parse_cmd_args()
     issue_list = []
     if epics:
-        issue_list = get_issue_list_from_epics(jira, epics)
+        issue_list = get_issue_list_from_ispis(jira, epics, isEpic=True, convert_to_ispi_strings=False)
     elif issues:
         issue_list = issues
     elif update_issues:
         migrated_issue_ispis = get_already_migrated_entries(notion_client, database_id)
-        issue_list = get_jira_issues_for_ispis(jira, migrated_issue_ispis)
+        issue_list = get_issue_list_from_ispis(jira, migrated_issue_ispis, isEpic=False, convert_to_ispi_strings=False)
     else:
         issue_list = get_issue_list_from_notion_epics(jira, notion_client)
 
@@ -46,12 +46,7 @@ def get_jira_issues(jira, notion_client, database_id):
     
     issue_list = get_issue_list(jira, notion_client, database_id)
 
-    jql_query = create_jira_jql_query(issue_list)
-
-    # Get JIRA issues using the specified filter
-    issues = get_jira_issues_for_jql_query(jira, jql_query)
-
-    return issues
+    return get_issue_list_from_ispis(jira, issue_list, convert_to_ispi_strings=False)
 
 
 def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
@@ -77,9 +72,9 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
     else:
         # Create a new sprint page
         
-        epic = get_jira_issues_for_ispis(epic_ispi)[0]
+        epic = get_issue_list_from_ispis(jira, epic_ispi, isEpic=True, convert_to_ispi_strings=False)[0]
 
-        _, summary, _, description, url, _, _, _, _ = get_jira_entry_information(epic)
+        _, summary, _, description, url, _, _, _, _ = get_jira_issue_information(epic)
 
         new_epic_page = {
             "Name": {"title": [{"text": {"content": summary}}]},
