@@ -64,7 +64,9 @@ def create_OR_jira_jql_query(param_name, issue_keys) -> str:
     if isinstance(issue_keys, str):
         issue_keys = [issue_keys]
 
-    query = " OR ".join(f"{param_name} = {key}" for key in issue_keys)
+    issue_keys_string = ",".join(issue_keys)
+    query = f"\"{param_name}\" in ({issue_keys_string})"
+
     return query
 
 
