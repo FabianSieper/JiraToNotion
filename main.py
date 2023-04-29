@@ -78,7 +78,7 @@ def main():
 
     notion, jira, database_id, sprints_database_id, epic_database_id = setup()
     _, _, update_issues = parse_cmd_args()
-    issues = get_jira_issues(jira, notion, database_id)
+    issues = get_jira_issues(jira, notion, database_id, epic_database_id)
 
     if update_issues:
         print_info("Updating Notion issues")

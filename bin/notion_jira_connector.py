@@ -3,17 +3,12 @@ from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.jira_connector import *
 
-def get_issue_list_from_notion_epics(jira, notion_client):
+
+def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
     print_info("Fetching Issues for already created Notion Epics")
 
-    # Retrieve the epic database
-    epic_database_id = get_database_id(notion_client, EPICS_DATABASE_URL, EPICS_DATABASE_NAME)
-
-    # Get all epics
-    existing_epic_pages = notion_client.databases.query(
-        database_id=epic_database_id
-    ).get("results")
+    existing_epic_pages = get_notion_pages(notion_client, epic_database_id)
 
     epic_list = [page["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for page in existing_epic_pages if len(page["properties"]["ISPI"]["rich_text"]) > 0]
     print_info("Successfully fetched list of existing notion epic pages")
@@ -25,7 +20,7 @@ def get_issue_list_from_notion_epics(jira, notion_client):
 
 
 
-def get_jira_issues(jira, notion_client, database_id):
+def get_jira_issues(jira, notion_client, database_id, epic_database_id):
 
     epics, issues, update_issues = parse_cmd_args()
     issue_list = []
@@ -45,7 +40,7 @@ def get_jira_issues(jira, notion_client, database_id):
 
     # If missing issues for the given notion epics shall be added
     else:
-        issue_list = get_issue_list_from_notion_epics(jira, notion_client)
+        issue_list = get_issue_list_from_notion_epics(jira, notion_client, epic_database_id)
 
     return issue_list    
 
@@ -58,16 +53,13 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
     # Retrieve the epics database
     epic_database_id = get_database_id(notion_client, EPICS_DATABASE_URL, EPICS_DATABASE_NAME)
 
-    # Check if the epic page already exists
-    existing_epic_pages = notion_client.databases.query(
-        database_id=epic_database_id,
-        filter={
+    jql_query={
             "property": "ISPI",
             "title": {
                 "equals": epic_ispi,
             },
         }
-    ).get("results")
+    existing_epic_pages = get_notion_pages(notion_client, epic_database_id, jql_query)
 
     if existing_epic_pages:
         return existing_epic_pages[0]["id"]

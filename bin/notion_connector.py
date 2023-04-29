@@ -97,9 +97,16 @@ def get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue):
             "equals": jira_issue.key
         }
     }
-    response = notion_client.databases.query(database_id=database_id, filter={"and": [jql_query]})
-    results = response.get("results")
+    results = get_notion_pages(notion_client, database_id, jql_query)
     return results[0]["id"] if results else None
+
+
+def get_notion_pages(notion_client, database_id, jql_query=None):
+
+    if jql_query:
+        return notion_client.databases.query(database_id=database_id, filter=jql_query).get("results")
+    else:
+        return notion_client.databases.query(database_id=database_id).get("results")
 
 
 def update_notion_issue_status(notion_client, database_id, jira_issue):
