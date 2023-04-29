@@ -3,6 +3,7 @@ from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.jira_connector import *
 
+_existing_epic_pages = None
 
 def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
@@ -48,24 +49,21 @@ def get_jira_issues(jira, notion_client, database_id, epic_database_id):
 
 def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
 
-    print_info("Creating or fetching epic entry for epic " + epic_ispi)
+    global _existing_epic_pages
 
-    # Retrieve the epics database
-    epic_database_id = get_database_id(notion_client, EPICS_DATABASE_URL, EPICS_DATABASE_NAME)
+    if not _existing_epic_pages:
 
-    jql_query={
-            "property": "ISPI",
-            "title": {
-                "equals": epic_ispi,
-            },
-        }
-    existing_epic_pages = get_notion_pages(notion_client, epic_database_id, jql_query)
+        print_info("Fetching existing epic pages in Notion")
 
-    if existing_epic_pages:
-        return existing_epic_pages[0]["id"]
+        existing_epic_pages_list = get_notion_pages(notion_client, epic_database_id)
+
+        _existing_epic_pages = {epic_page['properties']['ISPI']['rich_text'][0]['text']['content'] : epic_page for epic_page in existing_epic_pages_list if len(epic_page['properties']['ISPI']['rich_text']) > 0}
+
+    if epic_ispi in _existing_epic_pages:
+        return _existing_epic_pages[epic_ispi]
     else:
-        # Create a new sprint page
-        
+
+        print_info("Creating new epic page in Notion")
         epic = get_issue_list_from_ispis(jira, epic_ispi, isEpic=True, convert_to_ispi_strings=False)[0]
 
         _, summary, _, description, url, _, _, _, _ = get_jira_issue_information(epic)
@@ -77,4 +75,6 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
             "Description": {"rich_text": [{"text": {"content": description if description else ""}}]},
         }
 
-        return create_notion_page(notion_client, epic_database_id, new_epic_page)
+        new_epic_page = create_notion_page(notion_client, epic_database_id, new_epic_page)
+        _existing_epic_pages[epic_ispi] = new_epic_page
+        return new_epic_page

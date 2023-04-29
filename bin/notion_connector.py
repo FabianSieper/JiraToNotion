@@ -2,6 +2,10 @@ from bin.helper_functions import *
 from bin.jira_connector import *
 from tqdm import tqdm
 
+
+_existing_sprint_pages = None
+_existing_issue_pages = None
+
 def get_already_migrated_entries(notion_client, database_id, filter = None, convert_to_ispis_strings = True):
 
     # Retrieve existing pages in the Notion database
@@ -39,34 +43,36 @@ def get_already_migrated_entries(notion_client, database_id, filter = None, conv
 
 def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
 
-    print_info("Creating or fetching sprint entry for sprint name " + sprint_name)
+    global _existing_sprint_pages
 
     if "CaVORS" in sprint_name:
         sprint_name = sprint_name.replace("CaVORS-", "CV-")
 
-    filter={
-        "property": "Name",
-        "title": {
-            "equals": sprint_name,
-        }
-    }
+    # Fetch all sprint pages, if not already done
+    if not _existing_sprint_pages:
 
-    existing_sprint_pages = get_already_migrated_entries(notion_client, sprints_database_id, filter = filter, convert_to_ispis_strings = False)
+        print_info("Fetching already migrated sprint pages")
+        existing_sprint_pages_list = get_already_migrated_entries(notion_client, sprints_database_id, convert_to_ispis_strings = False)
 
-    if existing_sprint_pages:
-        return existing_sprint_pages[0]["id"]
+        _existing_sprint_pages = {sprint_page['properties']['Name']['title'][0]['plain_text'] : sprint_page for sprint_page in existing_sprint_pages_list if len(sprint_page['properties']['Name']['title'][0]) > 0}
+    
+    # Check if pages exists
+    if sprint_name in _existing_sprint_pages:
+        return _existing_sprint_pages[sprint_name]
     else:
         # Create a new sprint page
         new_sprint_page = {
             "Name": {"title": [{"text": {"content": sprint_name}}]}
         }
 
-        return create_notion_page(notion_client, sprints_database_id, new_sprint_page)
+        new_sprint_page = create_notion_page(notion_client, sprints_database_id, new_sprint_page)
+        _existing_sprint_pages[sprint_name] = new_sprint_page
+        return new_sprint_page
 
 
 def create_notion_page(notion_client, database_id, page):
 
-        return notion_client.pages.create(parent={"database_id": database_id}, properties=page).get("id")
+        return notion_client.pages.create(parent={"database_id": database_id}, properties=page)
 
 
 def get_database_id(notion_client, database_url, database_name):
