@@ -21,7 +21,7 @@ def get_all_jira_issues_for_query(jira, query):
     return all_issues
 
 
-def get_issue_list_from_ispis(jira, ispis, isEpic = False, convert_to_ispi_strings = True):
+def get_jira_issue_list_from_ispis(jira, ispis, isEpic = False, convert_to_ispi_strings = True):
 
     if isinstance(ispis, str):
         ispis = [ispis]

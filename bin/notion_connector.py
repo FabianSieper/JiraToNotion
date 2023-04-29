@@ -106,12 +106,27 @@ def get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue):
     return results[0]["id"] if results else None
 
 
-def get_notion_pages(notion_client, database_id, jql_query=None):
+def get_notion_pages(notion_client, database_id, filter_query=None):
+    all_pages = []
+    start_cursor = None
+    page_size = 100
 
-    if jql_query:
-        return notion_client.databases.query(database_id=database_id, filter=jql_query).get("results")
-    else:
-        return notion_client.databases.query(database_id=database_id).get("results")
+    while True:
+        if filter_query:
+            results = notion_client.databases.query(database_id=database_id, filter=filter_query, start_cursor=start_cursor, page_size=page_size)
+        else:
+            results = notion_client.databases.query(database_id=database_id, start_cursor=start_cursor, page_size=page_size)
+
+        all_pages.extend(results.get("results"))
+
+        print_info("Fetched jira issues: " + str(len(all_pages)))
+
+        if "next_cursor" in results and results["next_cursor"]:
+            start_cursor = results["next_cursor"]
+        else:
+            break
+
+    return all_pages
 
 
 def update_notion_issue_status(notion_client, database_id, jira_issue):
@@ -131,9 +146,20 @@ def update_notion_issue_status(notion_client, database_id, jira_issue):
         print_info(f'No Notion page found for Jira issue: {jira_issue.key}')      
 
 
+def get_updated_jira_issues(jira_issues, notion_issues):
 
-def update_all_notion_issues(notion_client, database_id, jira_issues):
+    updated_jira_issues = []
 
-    for jira_issue in tqdm(jira_issues, "Updating issues ... "):
-        update_notion_issue_status(notion_client, database_id, jira_issue)
+    notion_issues_dict = {issue['properties']['ISPI']['rich_text'][0]['text']['content'] : issue for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0}
 
+    for jira_issue in jira_issues:
+
+        notion_issue = notion_issues_dict[jira_issue.key]
+
+        jira_status = jira_issue.fields.status.name
+        notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
+
+        if jira_status != notion_status:
+            updated_jira_issues.append(jira_issue)
+
+    return updated_jira_issues

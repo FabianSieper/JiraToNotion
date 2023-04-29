@@ -79,15 +79,14 @@ def main():
 
     notion, jira, database_id, sprints_database_id, epic_database_id = setup()
     _, _, update_issues = parse_cmd_args()
-    issues = get_jira_issues(jira, notion, database_id, epic_database_id)
 
     if update_issues:
-        print_info("Updating Notion issues")
-        update_all_notion_issues(notion, database_id, issues)
-        print_info("Updated Notion issues")
+        update_all_notion_issues(notion, jira, database_id)
+        print_info("Successfully updated Notion issues")
 
     else:
 
+        issues = get_jira_issues(jira, notion, database_id, epic_database_id)
         existing_ispis = get_already_migrated_entries(notion, database_id, convert_to_ispis_strings=True)
 
         add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis)
