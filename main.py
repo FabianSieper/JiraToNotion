@@ -1,20 +1,9 @@
 from notion_client import Client
 from jira import JIRA
 from tqdm import tqdm
-from config import (
-    NOTION_API_KEY,
-    NOTION_DATABASE_URL,
-    NOTION_DATABASE_NAME,
-    SPRINTS_DATABASE_URL,
-    SPRINTS_DATABASE_NAME,
-    DEFAULT_NOTION_LABEL,
-    AMOUNT_JIRA_RESULTS,
-    JIRA_SERVER_URL,
-    JIRA_USERNAME,
-    JIRA_PASSWORD,
-    CAVORS_SPRINT_PREFIX
-)
-from helper_functions import *
+from bin.config import *
+from bin.helper_functions import *
+from bin.notion_jira_connector import *
 # --------------------------------------------
 # Dynamic variables
 # --------------------------------------------

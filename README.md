@@ -22,33 +22,23 @@ To configure the script to your Jira and Notion databases, replace the following
 - JIRA_USERNAME: Your JIRA username
 - JIRA_PASSWORD: Your JIRA password
 
-## Execution
-Run the script by using the command
-```
-python main.py
-```
+## Execution and ModesModes
 
-### Modes
-There are three different modes:
-1. Update
-2. Add Issues by Epic ISPI
-3. Add Issues by Issue ISPI
-
-#### 1. Update
+### 1. Update
 For this, you can execute the script as follows:
 ```
 python main.py
 ```
 This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Linked Sprints are added to the Notion Sprints database.
 
-#### 2. Update issues
+### 2. Update issues
 For this, you can execute the script as follows:
 ```
 python main.py --update-issues
 ```
 This updates the status of all issues in the Notion databse according to the status in Jira. No new Issues are added and no other properties are overwritten
 
-#### 3. Add Issues by Epic ISPI
+### 3. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --epics ISPI-123456 ISPI-987654 
@@ -57,7 +47,7 @@ Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Epics.
 
 This takes all Issues linked to the Jira Epics and adds them to the Notion Issue database. The epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
 
-#### 4. Add Issues by Epic ISPI
+### 4. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --issues ISPI-123456 ISPI-987654 
