@@ -4,9 +4,8 @@ from tqdm import tqdm
 
 
 _existing_sprint_pages = None
-_existing_issue_pages = None
 
-def get_already_migrated_entries(notion_client, database_id, filter = None, convert_to_ispis_strings = True):
+def get_already_migrated_entries(notion_client, database_id, filter=None, convert_to_ispis_strings=True):
 
     # Retrieve existing pages in the Notion database
     all_entries = []
@@ -20,7 +19,6 @@ def get_already_migrated_entries(notion_client, database_id, filter = None, conv
 
         if filter:
             result = notion_client.databases.query(database_id=database_id, filter=filter, start_cursor=start_cursor, page_size=page_size)
-
         else:
             result = notion_client.databases.query(database_id=database_id, start_cursor=start_cursor, page_size=page_size)
 
@@ -34,11 +32,12 @@ def get_already_migrated_entries(notion_client, database_id, filter = None, conv
             break
 
     if convert_to_ispis_strings:
-        # Convert to ISPI-strings
-        return [entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in all_entries if len(entry["properties"]["ISPI"]["rich_text"]) > 0]
-
+        # Convert to ISPI-strings as a set
+        return {entry["properties"]["ISPI"]["rich_text"][0]["text"]["content"] for entry in all_entries if len(entry["properties"]["ISPI"]["rich_text"]) > 0}
     else:
+        # Convert all_entries to a set
         return all_entries
+
     
 
 def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):

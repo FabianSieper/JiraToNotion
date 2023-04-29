@@ -88,7 +88,7 @@ def main():
 
     else:
 
-        existing_ispis = get_already_migrated_entries(notion, database_id)
+        existing_ispis = get_already_migrated_entries(notion, database_id, convert_to_ispis_strings=True)
 
         add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis)
         print_info("Amount of JIRA issues added to notion database: " + str(len(issues) - amount_issues_skipped))
