@@ -75,6 +75,57 @@ def print_issue_information(issue, advanced = False):
         for field_name, field_value in issue.fields.__dict__.items():
             print(f"{field_name}: {field_value}")
 
+def get_notion_sprint_filter():
+
+    filter = None
+    # Add a filter for sprints, if sprints are given
+    if get_sprints():
+        
+        sprint_conditions = []
+
+        for sprint in get_sprints():
+            condition = {
+                "property": "Sprint",
+                "single_select": {
+                    "equals": sprint
+                }
+            }
+            sprint_conditions.append(condition)
+        
+        filter = {"or": sprint_conditions}
+
+    return filter
+
+
+def convert_jira_issues_into_ispis(issues):
+
+    if not issues:
+        return None
+    
+    return [issue.key for issue in issues]
+
+
+def get_notion_ISPI_filter(ispis):
+    
+    filter = None
+    # Add a filter for ISPI's, if ISPI's are given
+    if ispis:
+        
+        ispi_conditions = []
+
+        for sprint in ispis:
+            condition = {
+                "property": "ISPI",
+                "title": {
+                    "equals": sprint
+                }
+            }
+            ispi_conditions.append(condition)
+        
+        filter = {"or": ispi_conditions}
+
+    return filter
+
 
 def create_OR_jira_jql_query(param_name, issue_keys) -> str:
     if isinstance(issue_keys, str):
@@ -83,13 +134,19 @@ def create_OR_jira_jql_query(param_name, issue_keys) -> str:
     issue_keys_string = ",".join(issue_keys)
     query = f"\"{param_name}\" in ({issue_keys_string})"
 
-    query += "And Team = " + KOBRA_IDENTIFIER
+    query += " And Team = " + KOBRA_IDENTIFIER
 
+    # If the list of Issues shall be limited to one or more sprints
+    if get_sprints():
+        query += " And Sprint in (" + ", ".join(["'" + sprint + "'," for sprint in get_sprints()])[:-1] + ")"
+
+    print(query)
+    
     return query
 
-def is_team_kobra_filter():
+def get_sprints():
 
-    return parse_cmd_args()[4]
+    return parse_cmd_args()[3]
 
 def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser = argparse.ArgumentParser(description="Check for --epic and --issue arguments")
@@ -97,11 +154,13 @@ def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser.add_argument("--epics", nargs="*", help="List of epic arguments", default=[])
     parser.add_argument("--issues", nargs="*", help="List of issue arguments", default=[])
     parser.add_argument("--update", action="store_true", help="Update issues flag")
+    parser.add_argument("--sprints", nargs='*', default=None, help="Describe which sprints shall be updated. E.g. cavors-91 cavors-92")
                         
     args = parser.parse_args()
 
     epic_args = args.epics
     issue_args = args.issues
     update = args.update
+    sprints = args.sprints
 
-    return epic_args, issue_args, update
+    return epic_args, issue_args, update, sprints

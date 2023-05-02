@@ -9,7 +9,13 @@ def get_all_jira_issues_for_query(jira, query):
     max_results = 100
 
     while True:
-        issues = jira.search_issues(query, startAt=start_at, maxResults=max_results)
+        try:
+            issues = jira.search_issues(query, startAt=start_at, maxResults=max_results)
+        except Exception:
+            print_info("Not able to search for issue with query: " + str(query))
+            print_info("Returning empty list.")
+            return []
+        
         if not issues:
             break
 
@@ -38,4 +44,4 @@ def get_jira_issue_list_from_ispis(jira, ispis, isEpic = False, convert_to_ispi_
     if convert_to_ispi_strings:
         issue_list = [str(issue) for issue in issue_list]
 
-    return issue_list
+    return issue_list if issue_list else -1

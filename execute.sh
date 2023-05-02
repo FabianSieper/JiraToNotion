@@ -8,7 +8,8 @@ read -p "Enter the option number: " option
 
 case $option in
     1)
-        python3 main.py --update
+        read -p "Enter sprint names. You also can enter none. (space-separated): " sprints
+        python3 main.py --update --sprints $sprints
         ;;
     2)
         read -p "Enter the issue IDs (space-separated): " issues
@@ -16,7 +17,8 @@ case $option in
         ;;
     3)
         read -p "Enter the epic IDs (space-separated): " epics
-        python3 main.py --epics $epics
+        read -p "Enter sprint names. You also can enter none. (space-separated): " sprints
+        python3 main.py --epics $epics --sprints $sprints
         ;;
     *)
         echo "Invalid option. Exiting..."

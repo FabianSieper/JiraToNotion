@@ -1,27 +1,35 @@
 from bin.helper_functions import *
 from bin.jira_connector import *
-from tqdm import tqdm
 
 
 _existing_sprint_pages = None
 _existing_sprint_pages_by_page_id = None
 
-def get_already_migrated_entries(notion_client, database_id, filter=None, convert_to_ispis_strings=True):
+def get_already_migrated_entries(notion_client, database_id, issue_list = None, convert_to_ispis_strings=True):
+
+    # If issue_list == -1, return an empty list 
+    if issue_list == -1:
+        return []
 
     # Retrieve existing pages in the Notion database
     all_entries = []
     start_cursor = None
-    page_size = 100
+    amount_pages = 100
     result = None
 
-    print_info("Detecting existing entries.")
+    issue_ispis = convert_jira_issues_into_ispis(issue_list)
+    filter = get_notion_ISPI_filter(issue_ispis)
 
+    
+    if issue_list:
+        print_info("Detecting existing entries of the list of given ISPIS: " + ", ".join(issue_ispis))
+    else:
+        print_info("Detecting existing entries.")
+
+    
     while True:
 
-        if filter:
-            result = notion_client.databases.query(database_id=database_id, filter=filter, start_cursor=start_cursor, page_size=page_size)
-        else:
-            result = notion_client.databases.query(database_id=database_id, start_cursor=start_cursor, page_size=page_size)
+        result = notion_client.databases.query(database_id=database_id, start_cursor=start_cursor, filter=filter, page_size=amount_pages)
 
         all_entries.extend(result["results"])
 

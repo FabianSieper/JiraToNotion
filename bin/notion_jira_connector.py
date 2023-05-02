@@ -3,6 +3,7 @@ from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.jira_connector import *
 
+from tqdm import tqdm
 # --------------------------------------------
 # Dynamic variables
 # --------------------------------------------
@@ -28,6 +29,10 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
     
     global amount_issues_skipped
 
+    if issues == -1:
+        print_info("No pages were added to Notion.")
+        return
+    
     # Add JIRA issues to the Notion database if not already present
     for issue in tqdm(issues, "Writing issues to notion database ..."):
 

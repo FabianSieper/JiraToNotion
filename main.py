@@ -39,7 +39,7 @@ def setup():
 def main():
 
     notion_client, jira_client, issue_database_id, sprints_database_id, epic_database_id = setup()
-    epics, issues, update = parse_cmd_args()
+    epics, issues, update, _ = parse_cmd_args()
 
     if update:
 
@@ -55,19 +55,24 @@ def main():
     elif epics:
 
         issue_list = get_jira_issue_list_from_ispis(jira_client, epics, isEpic=True, convert_to_ispi_strings=False)
-        existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, convert_to_ispis_strings=True)
+        existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, issue_list=issue_list, convert_to_ispis_strings=True)
 
         amount_issues_skipped = add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
-        print_info("Amount of JIRA issues added to Notion database based on Epics: " + str(len(issue_list) - amount_issues_skipped))
+        amount_issues_added = len(issue_list) - amount_issues_skipped if issue_list != -1 else 0
+        print_info("Amount of JIRA issues added to Notion database based on Epics: " + str(amount_issues_added))
 
     elif issues:
 
         issue_list = get_jira_issue_list_from_ispis(jira_client, issues, isEpic=False, convert_to_ispi_strings=False)
-        existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, convert_to_ispis_strings=True)
+        existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, issue_list=issue_list, convert_to_ispis_strings=True)
 
         amount_issues_skipped = add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
-        print_info("Amount of JIRA issues added to Notion database based on Issues: " + str(len(issue_list) - amount_issues_skipped))
+        amount_issues_added = len(issue_list) - amount_issues_skipped if issue_list != -1 else 0
+        print_info("Amount of JIRA issues added to Notion database based on Issues: " + str(amount_issues_added))
 
+    else:
 
+        print_info("The selected mode does not exist!")
+        
 if __name__ == "__main__":
     main()

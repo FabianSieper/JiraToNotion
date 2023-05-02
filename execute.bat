@@ -17,11 +17,8 @@ echo Invalid option. Exiting...
 goto END
 
 :UPDATE
-cmd /c python main.py --update
-goto END
-
-:UPDATE_ISSUES
-cmd /c python main.py --update-issues
+set /p SPRINTS="Enter sprint names. You also can enter none. (space-separated): "
+cmd /c python main.py --update --sprints %SPRINTS%
 goto END
 
 :ISSUES
@@ -31,7 +28,8 @@ goto END
 
 :EPICS
 set /p EPICS="Enter the epic IDs (space-separated): "
-cmd /c python main.py --epics %EPICS%
+set /p SPRINTS="Enter sprint names. You also can enter none. (space-separated): "
+cmd /c python main.py --epics %EPICS% --sprints %SPRINTS%
 goto END
 
 :END
