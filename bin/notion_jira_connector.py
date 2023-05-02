@@ -21,9 +21,9 @@ def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
 
 
-def get_jira_issues(jira, notion_client, database_id, epic_database_id):
+def get_jira_issues(jira, notion_client, epic_database_id):
 
-    epics, issues, update, update_issues = parse_cmd_args()
+    epics, issues, update, _, _ = parse_cmd_args()
     issue_list = []
 
     # If a list of epic-ispis is given

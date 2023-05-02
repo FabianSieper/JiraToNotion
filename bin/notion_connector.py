@@ -122,6 +122,7 @@ def get_notion_pages(notion_client, database_id, filter_query=None):
     while True:
         if filter_query:
             results = notion_client.databases.query(database_id=database_id, filter=filter_query, start_cursor=start_cursor, page_size=page_size)
+
         else:
             results = notion_client.databases.query(database_id=database_id, start_cursor=start_cursor, page_size=page_size)
 
