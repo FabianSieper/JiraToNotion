@@ -33,9 +33,11 @@ Some of these values can also be set by creating equally named environment varia
 #### 1. Update
 For this, you can execute the script as follows:
 ```
-python main.py --update
+python main.py --update [--sprints sprint-90 sprint-91]
 ```
-This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Also, already existent Notion Issues are updated. Linked Sprints are added to the Notion Sprints database.
+This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Also, already existent Notion Issues are updated. 
+Issues to be updated can be narrowed down by setting the `--sprints` parameter. Only issues that belong to one of the defined sprints are updated.
+Linked Sprints are added to the Notion Sprints database.
 
 #### 2. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
@@ -49,11 +51,12 @@ This takes all Issues linked to the Jira Epics and adds them to the Notion Issue
 #### 3. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
-python main.py --issues ISPI-123456 ISPI-987654 
+python main.py --issues ISPI-123456 ISPI-987654 [--sprints sprint-90 sprint-91]
 ```
 Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Issues.
 
-This adds the defined Issues to the Notion Isuse databse. Linked epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
+This adds the defined Issues to the Notion Isuse databse. Issues to be added can be narrowed down by setting the `--sprints` parameter. Only issues that belong to one of the defined sprints are added.
+Linked epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
 
 ### Alternative execution
 The script can also be executed using `execute.bat` and `execute.sh`. They display all previsouly mentioned modes which can be selected by entering the corresponding number.
