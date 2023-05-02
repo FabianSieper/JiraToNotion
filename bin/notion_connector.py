@@ -25,7 +25,7 @@ def get_already_migrated_entries(notion_client, database_id, filter=None, conver
 
         all_entries.extend(result["results"])
 
-        print_info("Fetching existing jira issues in Notion: " + str(len(all_entries)))
+        print_info("Fetching existing jira pages in Notion: " + str(len(all_entries)))
 
         if "next_cursor" in result and result["next_cursor"]:
             start_cursor = result["next_cursor"]
@@ -49,10 +49,6 @@ def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name = 
     if sprint_name == None and notion_sprint_page_id == None:
         print_info("No identifyer for sprint Notion page was given.")
         return None
-
-    # Name mapping
-    if sprint_name and "CaVORS" in sprint_name:
-        sprint_name = sprint_name.replace("CaVORS-", "CV-")
 
     # Fetch all sprint pages, if not already done
     if not _existing_sprint_pages:
@@ -143,19 +139,33 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
 
     notion_page_id = get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue)
 
+    retry_counter = 0
+    successfully_updated = False
+
     if notion_page_id:
         # Update properties: "Status", "Sprint", "Description" property
         _, _, issue_status, issue_description, _, _, issue_sprints, _, _ = get_jira_issue_information(jira_issue)
         sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints] if issue_sprints else []
 
-        notion_client.pages.update(
-            notion_page_id,
-            properties={
-                "Status": {"status": {"name": issue_status}},
-                "Sprint": {"relation": sprint_pages},
-                "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
-            }
-        )
+        while not successfully_updated:
+            try:
+                notion_client.pages.update(
+                    notion_page_id,
+                    properties={
+                        "Status": {"status": {"name": issue_status}},
+                        "Sprint": {"relation": sprint_pages},
+                        "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
+                        "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}}
+
+                    }
+                )
+                successfully_updated = True
+
+            except Exception as e:
+                print_info("Not able to update page. Retrying")
+                retry_counter += 1
+                print_info("Times retried updating: " + str(retry_counter))
+
     else:
         print_info(f'No Notion page found for Jira issue: {jira_issue.key}')      
 
@@ -186,9 +196,6 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         sprint_pages_names_notion = [get_or_create_sprint_page(notion_client, sprints_database_id, None, sprint_page_notion["id"])['properties']['Name']['title'][0]['plain_text'] for sprint_page_notion in sprint_pages_notion]
 
         if jira_sprints != sprint_pages_names_notion:
-
-            print(jira_sprints)
-            print(sprint_pages_names_notion)
             updated_jira_issues.append(jira_issue)
             continue
 
@@ -198,6 +205,14 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         notion_description = notion_issue['properties']['Description']['rich_text'][0]['plain_text'] if notion_issue['properties']['Description']['rich_text'] else ""
 
         if capped_jira_description != notion_description:
+            updated_jira_issues.append(jira_issue)
+            continue
+
+        # Check for changed team
+        jira_assigned_team = map_team_identifer_to_string(get_jira_assigned_team(jira_issue))
+        notion_assigned_team = notion_issue['properties']['Team']['select']['name'] if notion_issue['properties']['Team']['select'] else None
+        
+        if jira_assigned_team != notion_assigned_team:
             updated_jira_issues.append(jira_issue)
             continue
 

@@ -11,8 +11,23 @@ def throw_error(text):
     print("[ERROR] -", text)
     exit()
 
-def get_jira_issue_information(issue):
+def map_team_identifer_to_string(team_identifier):
 
+    if team_identifier == KOBRA_IDENTIFIER:
+        return "Kobra"
+    else:
+        return team_identifier
+    
+
+def get_jira_assigned_team(issue):
+
+    issue_assigned_team = issue.fields.customfield_11200
+    # Map the assigned team to useful strings
+    return map_team_identifer_to_string(issue_assigned_team)
+
+
+def get_jira_issue_information(issue):
+    
     issue_ispi = issue.key
     issue_summary = issue.fields.summary
     issue_status = issue.fields.status.name
@@ -22,6 +37,7 @@ def get_jira_issue_information(issue):
     issue_url = JIRA_SERVER_URL + "/browse/" + issue_ispi
     epic_ispi = issue.fields.customfield_10001
     issue_assignee = issue.fields.assignee
+
 
     # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field
     if issue_description and len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
