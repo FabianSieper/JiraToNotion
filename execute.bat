@@ -3,9 +3,9 @@
 :MENU
 echo.
 echo Select an option:
-echo 1. --update
-echo 2. --issues
-echo 3. --epics
+echo 1. Update Notion issues and import missing Issues, based on imported Epics
+echo 2. Import Notion Issues by providing a list of Issue ISPI's
+echo 3. Import Notion Issues by providing a list of Epic ISPI's. Issues linked to Epics will be imported
 echo.
 set /p OPTION="Enter the option number: "
 

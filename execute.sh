@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo "Select an option:"
-echo "1. --update"
-echo "2. --update-issues"
-echo "3. --issues"
+echo "1. Update Notion issues and import missing Issues, based on imported Epics"
+echo "2. Import Notion Issues by providing a list of Issue ISPI's"
+echo "3. Import Notion Issues by providing a list of Epic ISPI's. Issues linked to Epics will be imported"
 read -p "Enter the option number: " option
 
 case $option in
