@@ -97,15 +97,11 @@ def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser.add_argument("--epics", nargs="*", help="List of epic arguments", default=[])
     parser.add_argument("--issues", nargs="*", help="List of issue arguments", default=[])
     parser.add_argument("--update", action="store_true", help="Update issues flag")
-    parser.add_argument("--update-issues", action="store_true", help="Update issues flag")
-    parser.add_argument("--team-kobra", action="store_false", default=True, help="Only issues from Team Kobra are fetched from Jira; default: True")
                         
     args = parser.parse_args()
 
     epic_args = args.epics
     issue_args = args.issues
-    update_issues = args.update_issues
     update = args.update
-    team_kobra = args.team_kobra
 
-    return epic_args, issue_args, update, update_issues, team_kobra
+    return epic_args, issue_args, update

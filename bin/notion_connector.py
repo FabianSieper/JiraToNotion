@@ -85,10 +85,20 @@ def create_notion_page(notion_client, database_id, page):
 def get_database_id(notion_client, database_url, database_name):
     temp_database_id = ""
 
-    # Get all databases for the url provided
-    database_result = notion_client.search(filter={"property": "object", "value": "database"}, url=database_url).get("results")
+    amount_retries = 0
+    successfully_searched_notion = False
 
-    # Get all names of found databases
+    # Get all databases for the url provided
+    while not successfully_searched_notion:
+        try: 
+            database_result = notion_client.search(filter={"property": "object", "value": "database"}, url=database_url).get("results")
+            successfully_searched_notion = True
+
+        except Exception:
+            print_info("Failed to search Notion. Retrying. Amount of retries so far: " + str(amount_retries))
+            amount_retries += 1
+
+        # Get all names of found databases
     database_names = [result["title"][0]["plain_text"] for result in database_result]
 
     # Get Index of correct name
@@ -134,7 +144,6 @@ def get_notion_pages(notion_client, database_id, filter_query=None):
             break
 
     return all_pages
-
 
 def update_notion_issues(notion_client, database_id, sprints_database_id, jira_issue):
 

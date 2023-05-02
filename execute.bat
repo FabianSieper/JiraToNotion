@@ -4,16 +4,14 @@
 echo.
 echo Select an option:
 echo 1. --update
-echo 2. --update-issues
-echo 3. --issues
-echo 4. --epics
+echo 2. --issues
+echo 3. --epics
 echo.
 set /p OPTION="Enter the option number: "
 
 if %OPTION%==1 goto UPDATE
-if %OPTION%==2 goto UPDATE_ISSUES
-if %OPTION%==3 goto ISSUES
-if %OPTION%==4 goto EPICS
+if %OPTION%==2 goto ISSUES
+if %OPTION%==3 goto EPICS
 
 echo Invalid option. Exiting...
 goto END

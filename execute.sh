@@ -12,13 +12,10 @@ case $option in
         python3 main.py --update
         ;;
     2)
-        python3 main.py --update-issues
-        ;;
-    3)
         read -p "Enter the issue IDs (space-separated): " issues
         python3 main.py --issues $issues
         ;;
-    4)
+    3)
         read -p "Enter the epic IDs (space-separated): " epics
         python3 main.py --epics $epics
         ;;

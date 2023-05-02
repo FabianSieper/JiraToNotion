@@ -24,21 +24,15 @@ To configure the script to your Jira and Notion databases, replace the following
 
 ## Execution and Modes
 
-### 1. Update
+### Executing using Python
+#### 1. Update
 For this, you can execute the script as follows:
 ```
-python main.py
+python main.py --update
 ```
-This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Linked Sprints are added to the Notion Sprints database.
+This addes Issues to the Notion Issue database, which are linked to Epics, stored in the Notion Epics database. Already added Issues are not added again. Also, already existent Notion Issues are updated. Linked Sprints are added to the Notion Sprints database.
 
-### 2. Update issues
-For this, you can execute the script as follows:
-```
-python main.py --update-issues
-```
-This updates the status of all issues in the Notion databse according to the status in Jira. No new Issues are added and no other properties are overwritten
-
-### 3. Add Issues by Epic ISPI
+#### 2. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --epics ISPI-123456 ISPI-987654 
@@ -47,7 +41,7 @@ Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Epics.
 
 This takes all Issues linked to the Jira Epics and adds them to the Notion Issue database. The epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
 
-### 4. Add Issues by Epic ISPI
+#### 3. Add Issues by Epic ISPI
 For this, you can execute the script as follows:
 ```
 python main.py --issues ISPI-123456 ISPI-987654 
@@ -55,3 +49,6 @@ python main.py --issues ISPI-123456 ISPI-987654
 Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Issues.
 
 This adds the defined Issues to the Notion Isuse databse. Linked epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
+
+### Alternative execution
+The script can also be executed using `execute.bat` and `execute.sh`. They display all previsouly mentioned modes which can be selected by entering the corresponding number.
