@@ -144,9 +144,9 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
     notion_page_id = get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue)
 
     if notion_page_id:
-        # Update properties: "Status" "Sprint" property
+        # Update properties: "Status", "Sprint", "Description" property
         _, _, issue_status, issue_description, _, _, issue_sprints, _, _ = get_jira_issue_information(jira_issue)
-        sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints if sprint.startswith(CAVORS_SPRINT_PREFIX)]
+        sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints] if issue_sprints else []
 
         notion_client.pages.update(
             notion_page_id,
@@ -180,12 +180,15 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
 
         # Check for changed sprints    
         jira_sprints = get_jira_issue_information(jira_issue)[6]
-        jira_sprints_mapped_names = map_cavors_to_cv(jira_sprints)
+        jira_sprints = jira_sprints if jira_sprints else []
 
         sprint_pages_notion = notion_issue['properties']['Sprint']['relation']
         sprint_pages_names_notion = [get_or_create_sprint_page(notion_client, sprints_database_id, None, sprint_page_notion["id"])['properties']['Name']['title'][0]['plain_text'] for sprint_page_notion in sprint_pages_notion]
 
-        if jira_sprints_mapped_names != sprint_pages_names_notion:
+        if jira_sprints != sprint_pages_names_notion:
+
+            print(jira_sprints)
+            print(sprint_pages_names_notion)
             updated_jira_issues.append(jira_issue)
             continue
 

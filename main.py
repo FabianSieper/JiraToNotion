@@ -49,10 +49,10 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
             amount_issues_skipped += 1
             continue
 
-        # Get or create sprint pages in the sprints database, but only if Sprint name has prefix CAVORS_SPRINT_PREFIX
+        # Get or create sprint pages in the sprints database, but only if Sprint name has prefix 
         sprint_pages = []
         if issue_sprints:
-            sprint_pages = [{"id": get_or_create_sprint_page(notion, sprints_database_id, sprint)["id"]} for sprint in issue_sprints if sprint.startswith(CAVORS_SPRINT_PREFIX)]
+            sprint_pages = [{"id": get_or_create_sprint_page(notion, sprints_database_id, sprint)["id"]} for sprint in issue_sprints]
             
         # Get or create epic pages in the epics database
         epic_page = None

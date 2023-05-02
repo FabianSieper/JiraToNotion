@@ -69,13 +69,6 @@ def create_OR_jira_jql_query(param_name, issue_keys) -> str:
 
     return query
 
-def map_cavors_to_cv(cavors_list):
-
-    if not cavors_list:
-        return []
-    
-    return [cav.lower().replace("cavors", "cv").upper() for cav in cavors_list]
-
 
 def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser = argparse.ArgumentParser(description="Check for --epic and --issue arguments")

@@ -92,7 +92,7 @@ def update_all_notion_issues(notion_client, jira_client, database_id, sprints_da
 
     # Get list of jira issues, which have been updated
     updated_jira_issues = get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_database_id)
-    print_info("Found outdated Notion issues statuses: " + str(len(updated_jira_issues)))
+    print_info("Found outdated Notion issues: " + str(len(updated_jira_issues)))
 
     # Update Notion issues, where the paramter of interest is differnt
     for jira_issue in tqdm(updated_jira_issues, "Updating Notion issues ... "):
