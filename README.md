@@ -55,7 +55,16 @@ python main.py --issues ISPI-123456 ISPI-987654 [--sprints sprint-90 sprint-91]
 ```
 Here, `ISPI-123456` and `ISPI-987654` are ISPI's of Jira Issues.
 
-This adds the defined Issues to the Notion Isuse databse. Issues to be added can be narrowed down by setting the `--sprints` parameter. Only issues that belong to one of the defined sprints are added.
+This adds the defined Issues to the Notion Issue database. Issues to be added can be narrowed down by setting the `--sprints` parameter. Only issues that belong to one of the defined sprints are added.
+Linked epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
+
+#### 4. Add Issues by Sprint
+For this, you can execute the script as follows:
+```
+python main.py --sprints sprint-90 sprint-91
+```
+
+This adds Issues to the Notion Issue database which belong to at least one of the provided sprints. 
 Linked epics are added in the Notion Epics database and linked Sprints are added to the Notion Sprints database.
 
 ### Alternative execution

@@ -31,7 +31,7 @@ def get_jira_issue_list_from_ispis(jira, ispis, isEpic = False, convert_to_ispi_
 
     if isinstance(ispis, str):
         ispis = [ispis]
-    if not isinstance(ispis, list):
+    if ispis and not isinstance(ispis, list):
         ispis = list(ispis)
 
     if isEpic:

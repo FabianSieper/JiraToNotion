@@ -128,20 +128,26 @@ def get_notion_ISPI_filter(ispis):
 
 
 def create_OR_jira_jql_query(param_name, issue_keys) -> str:
-    if isinstance(issue_keys, str):
-        issue_keys = [issue_keys]
 
-    issue_keys_string = ",".join(issue_keys)
-    query = f"\"{param_name}\" in ({issue_keys_string})"
+    query = ""
 
-    query += " And Team = " + KOBRA_IDENTIFIER
+    if issue_keys:
+        if isinstance(issue_keys, str):
+            issue_keys = [issue_keys]
+
+        issue_keys_string = ",".join(issue_keys)
+        query = f"\"{param_name}\" in ({issue_keys_string})"
 
     # If the list of Issues shall be limited to one or more sprints
     if get_sprints():
-        query += " And Sprint in (" + ", ".join(["'" + sprint + "'," for sprint in get_sprints()])[:-1] + ")"
+        sprint_query = "Sprint in (" + ", ".join(["'" + sprint + "'," for sprint in get_sprints()])[:-1] + ")"
+        if query != "":
+            query += " And " + sprint_query
+        else:
+            query = sprint_query
 
-    print(query)
-    
+    query += " And Team = " + KOBRA_IDENTIFIER
+
     return query
 
 def get_sprints():
