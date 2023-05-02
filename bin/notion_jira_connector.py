@@ -67,10 +67,10 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
     return amount_issues_skipped
 
 
-def add_missing_notion_issues(jira_client, notion_client, issue_database_id, epic_database_id, sprints_database_id):
+def add_missing_notion_issues(jira_client, notion_client, issue_database_id, epic_database_id, sprints_database_id, notion_issues):
 
     issue_list = get_issue_list_from_notion_epics(jira_client, notion_client, epic_database_id)
-    existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, convert_to_ispis_strings=True)
+    existing_ispis = [issue['properties']['ISPI']['rich_text'][0]['text']['content'] for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0]
 
     add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
 
@@ -131,11 +131,9 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         return new_epic_page
 
 
-def update_existing_notion_issues(notion_client, jira_client, database_id, sprints_database_id):
+def update_existing_notion_issues(notion_client, jira_client, database_id, sprints_database_id, notion_issues):
 
-    # Get all notion issues
-    print_info("Fetching all Notion Issues")
-    notion_issues = get_notion_pages(notion_client, database_id)
+
     notion_issues_ispis = [issue['properties']['ISPI']['rich_text'][0]['text']['content'] for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0]
 
     # Get corresponding jira issues

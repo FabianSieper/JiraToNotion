@@ -52,7 +52,7 @@ def isIssueSkipped(issue, existing_titles):
 
     # Skip if issue was already sent to notion
     if issue_ispi in existing_titles:
-        print_info("Skipping JIRA issue, as the issue summary already exists in the Notion db: " + issue_summary)
+        print_info("Skipping JIRA issue, as the issue already exists in the Notion db: " + issue_summary)
         return True
     
     # DONT skip by default
