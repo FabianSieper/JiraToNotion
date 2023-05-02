@@ -8,6 +8,9 @@ import os
 def setup():
 
     # Fetch environment variables
+    if "NOTION_API_KEY" in os.environ:    
+        NOTION_API_KEY = os.environ["NOTION_API_KEY"]
+    
     if "JIRA_USERNAME" in os.environ:    
         JIRA_USERNAME = os.environ["JIRA_USERNAME"]
     
