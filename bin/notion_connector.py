@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 
 _existing_sprint_pages = None
+_existing_sprint_pages_by_page_id = None
 
 def get_already_migrated_entries(notion_client, database_id, filter=None, convert_to_ispis_strings=True):
 
@@ -40,11 +41,17 @@ def get_already_migrated_entries(notion_client, database_id, filter=None, conver
 
     
 
-def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
+def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name = None, notion_sprint_page_id = None):
 
     global _existing_sprint_pages
+    global _existing_sprint_pages_by_page_id
 
-    if "CaVORS" in sprint_name:
+    if sprint_name == None and notion_sprint_page_id == None:
+        print_info("No identifyer for sprint Notion page was given.")
+        return None
+
+    # Name mapping
+    if sprint_name and "CaVORS" in sprint_name:
         sprint_name = sprint_name.replace("CaVORS-", "CV-")
 
     # Fetch all sprint pages, if not already done
@@ -54,10 +61,13 @@ def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
         existing_sprint_pages_list = get_already_migrated_entries(notion_client, sprints_database_id, convert_to_ispis_strings = False)
 
         _existing_sprint_pages = {sprint_page['properties']['Name']['title'][0]['plain_text'] : sprint_page for sprint_page in existing_sprint_pages_list if len(sprint_page['properties']['Name']['title'][0]) > 0}
-    
+        _existing_sprint_pages_by_page_id = {sprint_page['id']: sprint_page for sprint_page in existing_sprint_pages_list}
+
     # Check if pages exists
-    if sprint_name in _existing_sprint_pages:
+    if sprint_name and sprint_name in _existing_sprint_pages:
         return _existing_sprint_pages[sprint_name]
+    elif notion_sprint_page_id and notion_sprint_page_id in _existing_sprint_pages_by_page_id:
+        return _existing_sprint_pages_by_page_id[notion_sprint_page_id]
     else:
         # Create a new sprint page
         new_sprint_page = {
@@ -66,6 +76,8 @@ def get_or_create_sprint_page(notion_client, sprints_database_id, sprint_name):
 
         new_sprint_page = create_notion_page(notion_client, sprints_database_id, new_sprint_page)
         _existing_sprint_pages[sprint_name] = new_sprint_page
+        _existing_sprint_pages_by_page_id[new_sprint_page["id"]] = new_sprint_page
+
         return new_sprint_page
 
 
@@ -119,8 +131,6 @@ def get_notion_pages(notion_client, database_id, filter_query=None):
 
         all_pages.extend(results.get("results"))
 
-        print_info("Fetched jira issues: " + str(len(all_pages)))
-
         if "next_cursor" in results and results["next_cursor"]:
             start_cursor = results["next_cursor"]
         else:
@@ -129,24 +139,28 @@ def get_notion_pages(notion_client, database_id, filter_query=None):
     return all_pages
 
 
-def update_notion_issue_status(notion_client, database_id, jira_issue):
+def update_notion_issues(notion_client, database_id, sprints_database_id, jira_issue):
 
     notion_page_id = get_notion_page_id_by_jira_issue(notion_client, database_id, jira_issue)
 
     if notion_page_id:
-        # Update the "Status" property of the Notion page with the Jira issue status
-        issue_status = jira_issue.fields.status.name
+        # Update properties: "Status" "Sprint" property
+        _, _, issue_status, issue_description, _, _, issue_sprints, _, _ = get_jira_issue_information(jira_issue)
+        sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints if sprint.startswith(CAVORS_SPRINT_PREFIX)]
+
         notion_client.pages.update(
             notion_page_id,
             properties={
-                "Status": {"status": {"name": issue_status}}
+                "Status": {"status": {"name": issue_status}},
+                "Sprint": {"relation": sprint_pages},
+                "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
             }
         )
     else:
         print_info(f'No Notion page found for Jira issue: {jira_issue.key}')      
 
 
-def get_updated_jira_issues(jira_issues, notion_issues):
+def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_database_id):
 
     updated_jira_issues = []
 
@@ -156,10 +170,32 @@ def get_updated_jira_issues(jira_issues, notion_issues):
 
         notion_issue = notion_issues_dict[jira_issue.key]
 
+        # Check for changed status
         jira_status = jira_issue.fields.status.name
         notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
 
         if jira_status != notion_status:
             updated_jira_issues.append(jira_issue)
+            continue
+
+        # Check for changed sprints    
+        jira_sprints = get_jira_issue_information(jira_issue)[6]
+        jira_sprints_mapped_names = map_cavors_to_cv(jira_sprints)
+
+        sprint_pages_notion = notion_issue['properties']['Sprint']['relation']
+        sprint_pages_names_notion = [get_or_create_sprint_page(notion_client, sprints_database_id, None, sprint_page_notion["id"])['properties']['Name']['title'][0]['plain_text'] for sprint_page_notion in sprint_pages_notion]
+
+        if jira_sprints_mapped_names != sprint_pages_names_notion:
+            updated_jira_issues.append(jira_issue)
+            continue
+
+        # Check for changed description
+        jira_description = get_jira_issue_information(jira_issue)[3]
+        capped_jira_description = jira_description[0:NOTION_TEXT_FIELD_MAX_CHARS] if jira_description else ""
+        notion_description = notion_issue['properties']['Description']['rich_text'][0]['plain_text'] if notion_issue['properties']['Description']['rich_text'] else ""
+
+        if capped_jira_description != notion_description:
+            updated_jira_issues.append(jira_issue)
+            continue
 
     return updated_jira_issues

@@ -78,10 +78,10 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 def main():
 
     notion, jira, database_id, sprints_database_id, epic_database_id = setup()
-    _, _, update_issues = parse_cmd_args()
+    _, _, _, update_issues = parse_cmd_args()
 
     if update_issues:
-        update_all_notion_issues(notion, jira, database_id)
+        update_all_notion_issues(notion, jira, database_id, sprints_database_id)
         print_info("Successfully updated Notion issues")
 
     else:

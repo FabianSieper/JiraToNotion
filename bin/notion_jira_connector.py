@@ -23,7 +23,7 @@ def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
 def get_jira_issues(jira, notion_client, database_id, epic_database_id):
 
-    epics, issues, update_issues = parse_cmd_args()
+    epics, issues, update, update_issues = parse_cmd_args()
     issue_list = []
 
     # If a list of epic-ispis is given
@@ -35,8 +35,11 @@ def get_jira_issues(jira, notion_client, database_id, epic_database_id):
         issue_list = get_jira_issue_list_from_ispis(jira, issues, isEpic=False, convert_to_ispi_strings=False)
 
     # If missing issues for the given notion epics shall be added
-    else:
+    elif update:
         issue_list = get_issue_list_from_notion_epics(jira, notion_client, epic_database_id)
+
+    else:
+        print_info("No valid  task was recognized.")
 
     return issue_list    
 
@@ -76,9 +79,8 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
 
 
 
-def update_all_notion_issues(notion_client, jira_client, database_id):
+def update_all_notion_issues(notion_client, jira_client, database_id, sprints_database_id):
 
-    
     # Get all notion issues
     print_info("Fetching all Notion Issues")
     notion_issues = get_notion_pages(notion_client, database_id)
@@ -89,10 +91,10 @@ def update_all_notion_issues(notion_client, jira_client, database_id):
     jira_issues = get_jira_issue_list_from_ispis(jira_client, notion_issues_ispis, convert_to_ispi_strings=False)
 
     # Get list of jira issues, which have been updated
-    updated_jira_issues = get_updated_jira_issues(jira_issues, notion_issues)
+    updated_jira_issues = get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_database_id)
     print_info("Found outdated Notion issues statuses: " + str(len(updated_jira_issues)))
 
     # Update Notion issues, where the paramter of interest is differnt
-    for jira_issue in tqdm(updated_jira_issues, "Updating Notion statuses ... "):
-        update_notion_issue_status(notion_client, database_id, jira_issue)
+    for jira_issue in tqdm(updated_jira_issues, "Updating Notion issues ... "):
+        update_notion_issues(notion_client, database_id, sprints_database_id, jira_issue)
 

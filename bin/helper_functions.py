@@ -69,6 +69,12 @@ def create_OR_jira_jql_query(param_name, issue_keys) -> str:
 
     return query
 
+def map_cavors_to_cv(cavors_list):
+
+    if not cavors_list:
+        return []
+    
+    return [cav.lower().replace("cavors", "cv").upper() for cav in cavors_list]
 
 
 def parse_cmd_args() -> Tuple[List[str], List[str]]:
@@ -76,6 +82,7 @@ def parse_cmd_args() -> Tuple[List[str], List[str]]:
 
     parser.add_argument("--epics", nargs="*", help="List of epic arguments", default=[])
     parser.add_argument("--issues", nargs="*", help="List of issue arguments", default=[])
+    parser.add_argument("--update", action="store_true", help="Update issues flag")
     parser.add_argument("--update-issues", action="store_true", help="Update issues flag")
                         
     args = parser.parse_args()
@@ -83,5 +90,6 @@ def parse_cmd_args() -> Tuple[List[str], List[str]]:
     epic_args = args.epics
     issue_args = args.issues
     update_issues = args.update_issues
+    update = args.update
 
-    return epic_args, issue_args, update_issues
+    return epic_args, issue_args, update, update_issues
