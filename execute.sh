@@ -4,7 +4,6 @@ echo "Select an option:"
 echo "1. --update"
 echo "2. --update-issues"
 echo "3. --issues"
-echo "4. --epics"
 read -p "Enter the option number: " option
 
 case $option in
