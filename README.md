@@ -12,8 +12,8 @@ The script will
 ## Configuration
 To configure the script to your Jira and Notion databases, replace the following values in the file `bin/config.py`:
 - NOTION_API_KEY: Your Notion API key
-- NOTION_DATABASE_URL: The URL of your Notion database
-- NOTION_DATABASE_NAME: The name of your Notion database (default: "Tasks")
+- ISSUES_DATABASE_URL: The URL of your Notion database
+- ISSUES_DATABASE_NAME: The name of your Notion database (default: "Tasks")
 - SPRINTS_DATABASE_URL: The URL of your Sprints database in Notion
 - SPRINTS_DATABASE_NAME: The name of your Sprints database in Notion (default: "Sprints")
 - EPICS_DATABASE_URL: The URL of your Epics database in Notion

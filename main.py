@@ -1,22 +1,25 @@
 from notion_client import Client
 from jira import JIRA
-from tqdm import tqdm
 from bin.config import *
 from bin.helper_functions import *
 from bin.notion_jira_connector import *
-
-# --------------------------------------------
-# SCRIPT
-# --------------------------------------------
+import os
 
 def setup():
+
+    # Fetch environment variables
+    if "JIRA_USERNAME" in os.environ:    
+        JIRA_USERNAME = os.environ["JIRA_USERNAME"]
+    
+    if "JIRA_PASSWORD" in os.environ:
+        JIRA_PASSWORD = os.environ["JIRA_PASSWORD"]
 
     # Initialize clients
     notion = Client(auth=NOTION_API_KEY)
     jira = JIRA(server=JIRA_SERVER_URL, basic_auth=(JIRA_USERNAME, JIRA_PASSWORD))
 
     # Retrieve the Notion-JIRA-issue database
-    database_id = get_database_id(notion, NOTION_DATABASE_URL, NOTION_DATABASE_NAME)
+    database_id = get_database_id(notion, ISSUES_DATABASE_URL, ISSUES_DATABASE_NAME)
     print_info("Found issues-database with id" + database_id)
 
     # Retrieve the Notion-Sprint database

@@ -23,6 +23,7 @@ def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
     return issue_list
 
+
 def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis):
     
     global amount_issues_skipped
