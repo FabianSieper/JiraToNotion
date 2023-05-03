@@ -64,7 +64,9 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
             "Sprint": {"relation": sprint_pages},
             "Epic": {"relation": epic_page if epic_page and epic_page[0]["id"] else []},
             "Zeitlicher Fortschritt": {"number": 0},
-            "Team": {"select": {"name": get_jira_assigned_team(issue)}}
+            "Team": {"select": {"name": get_jira_assigned_team(issue)}},
+            "Assignee": {"select": {"name": get_jira_assigned_person(issue)}}
+
         }
 
         notion.pages.create(parent={"database_id": database_id}, properties=new_page).get("id")

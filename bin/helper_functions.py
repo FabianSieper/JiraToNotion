@@ -26,6 +26,10 @@ def get_jira_assigned_team(issue):
     return map_team_identifer_to_string(issue_assigned_team)
 
 
+def get_jira_assigned_person(issue):
+
+    return issue.fields.assignee.displayName if issue.fields.assignee else None
+
 def get_jira_issue_information(issue):
     
     issue_ispi = issue.key
@@ -36,7 +40,7 @@ def get_jira_issue_information(issue):
     issue_sprints = [s.split('name=')[1].split(',')[0] for s in issue.fields.customfield_10000] if issue.fields.customfield_10000 else None
     issue_url = JIRA_SERVER_URL + "/browse/" + issue_ispi
     epic_ispi = issue.fields.customfield_10001
-    issue_assignee = issue.fields.assignee
+    issue_assignee = issue.fields.assignee.displayName if issue.fields.assignee else ""
 
 
     # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field

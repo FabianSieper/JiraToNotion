@@ -1,6 +1,6 @@
 from bin.helper_functions import *
 from bin.jira_connector import *
-
+from time import sleep
 
 _existing_sprint_pages = None
 _existing_sprint_pages_by_page_id = None
@@ -104,6 +104,7 @@ def get_database_id(notion_client, database_url, database_name):
 
         except Exception:
             print_info("Failed to search Notion. Retrying. Amount of retries so far: " + str(amount_retries))
+            sleep(1)
             amount_retries += 1
 
         # Get all names of found databases
@@ -173,16 +174,20 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
                         "Status": {"status": {"name": issue_status}},
                         "Sprint": {"relation": sprint_pages},
                         "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
-                        "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}}
+                        "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}},
+                        "Assignee": {"select": {"name": get_jira_assigned_person(jira_issue)}}
 
                     }
                 )
                 successfully_updated = True
 
             except Exception as e:
+                print(e)
                 print_info("Not able to update page. Retrying")
                 retry_counter += 1
                 print_info("Times retried updating: " + str(retry_counter))
+                sleep(1)
+
 
     else:
         print_info(f'No Notion page found for Jira issue: {jira_issue.key}')      
@@ -231,6 +236,14 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         notion_assigned_team = notion_issue['properties']['Team']['select']['name'] if notion_issue['properties']['Team']['select'] else None
         
         if jira_assigned_team != notion_assigned_team:
+            updated_jira_issues.append(jira_issue)
+            continue
+
+        # Check for changed assignment
+        jira_assigned_person = get_jira_assigned_person(jira_issue)
+        notion_assigned_person = notion_issue['properties']['Assignee']['select']['name'] if notion_issue['properties']['Assignee']['select'] else None
+
+        if jira_assigned_person != notion_assigned_person:
             updated_jira_issues.append(jira_issue)
             continue
 
