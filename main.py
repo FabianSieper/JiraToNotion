@@ -39,9 +39,9 @@ def setup():
 def main():
 
     notion_client, jira_client, issue_database_id, sprints_database_id, epic_database_id = setup()
-    epics, issues, update, sprints = parse_cmd_args()
+    epics, issues, update_notion, update_jira, sprints = parse_cmd_args()
 
-    if update:
+    if update_notion:
         print_info("Fetching all Notion Issues")
         notion_issues = get_notion_pages(notion_client, issue_database_id)
 
@@ -51,6 +51,13 @@ def main():
         add_missing_notion_issues(jira_client, notion_client, issue_database_id, epic_database_id, sprints_database_id, notion_issues)
         print_info("Successfully added missing Notion pages")
 
+    elif update_jira:
+
+        print_info("Fetching all Notion Issues")
+        notion_issues = get_notion_pages(notion_client, issue_database_id)
+
+        update_jira_issues(notion_client, jira_client, sprints_database_id, notion_issues)
+    
     elif epics:
 
         issue_list = get_jira_issue_list_from_ispis(jira_client, epics, isEpic=True, convert_to_ispi_strings=False)

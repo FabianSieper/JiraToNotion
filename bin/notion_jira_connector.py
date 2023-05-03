@@ -84,7 +84,7 @@ def add_missing_notion_issues(jira_client, notion_client, issue_database_id, epi
 
 def get_jira_issues(jira, notion_client, epic_database_id):
 
-    epics, issues, update, _, _ = parse_cmd_args()
+    epics, issues, update_notion, _, _, _ = parse_cmd_args()
     issue_list = []
 
     # If a list of epic-ispis is given
@@ -96,7 +96,7 @@ def get_jira_issues(jira, notion_client, epic_database_id):
         issue_list = get_jira_issue_list_from_ispis(jira, issues, isEpic=False, convert_to_ispi_strings=False)
 
     # If missing issues for the given notion epics shall be added
-    elif update:
+    elif update_notion:
         issue_list = get_issue_list_from_notion_epics(jira, notion_client, epic_database_id)
 
     else:
@@ -138,6 +138,59 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         return new_epic_page
 
 
+def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_issues):
+
+    notion_issues_ispis = [issue['properties']['ISPI']['rich_text'][0]['text']['content'] for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0]
+
+    # Get corresponding jira issues
+    print_info("Fetching all Jira Issues for found Notion Issues")
+    jira_issues = get_jira_issue_list_from_ispis(jira_client, notion_issues_ispis, convert_to_ispi_strings=False)
+    jira_issues_dict = {get_jira_ispi(jira_issue): jira_issue for jira_issue in jira_issues}
+
+    # Get list of Notion Issues, which have been updated
+    updated_notion_issues = get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints_database_id)
+    print_info("Found outdated Jira issues: " + str(len(updated_notion_issues)))
+
+    print_info("The following Issues will be updated in Jira: ")
+    for notion_issue in updated_notion_issues:
+
+        notion_assignee = get_assignee_from_notion_issue(notion_issue)
+        notion_status = get_status_from_notion_issue(notion_issue)
+        notion_ispi = get_ispi_from_notion_issue(notion_issue)
+        notion_summary = get_summary_from_notion_issue(notion_issue)
+
+        jira_status = get_jira_status(jira_issues_dict[notion_ispi])
+        jira_assignee = get_jira_assigned_person(jira_issues_dict[notion_ispi])
+
+        print_info("")
+        print_info("Updating " + notion_ispi + ": " + notion_summary)
+        print_info("\tStatus:")
+        print_info("\t\tWas:\t\t" + jira_status)
+        print_info("\t\tWill be:\t" + notion_status)
+        print_info("\tAssignee:")
+        print_info("\t\tWas:\t\t" + jira_assignee)
+        print_info("\t\tWill be:\t" + notion_assignee)
+
+    continue_answer = input("Do you want to continue? Enter 'Yes' to continue ...\n")
+    if continue_answer != "Yes":
+        print_info("NOT updating Jira Issues!")
+        return
+
+    amount_skipped_issues = 0
+
+    # Update Jira issues
+    for notion_issue in tqdm(updated_notion_issues, "Updating existing Jira issues ... "):
+        notion_assignee = get_assignee_from_notion_issue(notion_issue)
+        notion_status = get_status_from_notion_issue(notion_issue)
+        result = update_jira_issue_status_and_assignee(jira_client, get_ispi_from_notion_issue(notion_issue), notion_status, notion_assignee)
+
+    if result == -1:
+        amount_skipped_issues += 1
+
+    print_info("Successfully updated Jira Issues")
+    print_info("Amount of Jira Issues skipped: " + str(amount_skipped_issues) + "/" + str(len(updated_notion_issues)))
+
+
 def update_existing_notion_issues(notion_client, jira_client, database_id, sprints_database_id, notion_issues):
 
 
@@ -151,7 +204,7 @@ def update_existing_notion_issues(notion_client, jira_client, database_id, sprin
     updated_jira_issues = get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_database_id)
     print_info("Found outdated Notion issues: " + str(len(updated_jira_issues)))
 
-    # Update Notion issues, where the paramter of interest is differnt
+    # Update Notion issues
     for jira_issue in tqdm(updated_jira_issues, "Updating existing Notion issues ... "):
         update_notion_issues(notion_client, database_id, sprints_database_id, jira_issue)
 

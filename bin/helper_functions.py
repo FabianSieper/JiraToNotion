@@ -19,6 +19,30 @@ def map_team_identifer_to_string(team_identifier):
         return team_identifier
     
 
+def get_assignee_from_notion_issue(notion_issue):
+
+    return notion_issue["properties"]["Assignee"]["select"]["name"] if notion_issue["properties"]["Assignee"]["select"] else "Unassigned"
+
+
+def get_status_from_notion_issue(notion_issue):
+
+    return notion_issue["properties"]["Status"]["status"]["name"]
+
+
+def get_summary_from_notion_issue(notion_issue):
+
+    return notion_issue['properties']['Summary']['title'][0]['plain_text'] if notion_issue['properties']['Summary']['title'] else None
+
+
+def get_ispi_from_notion_issue(notion_issue):
+
+    return notion_issue['properties']['ISPI']['rich_text'][0]['plain_text'] if notion_issue['properties']['ISPI']['rich_text'] else None
+
+
+def get_jira_ispi(issue):
+
+    return issue.key
+
 def get_jira_assigned_team(issue):
 
     issue_assigned_team = issue.fields.customfield_11200
@@ -29,6 +53,12 @@ def get_jira_assigned_team(issue):
 def get_jira_assigned_person(issue):
 
     return issue.fields.assignee.displayName if issue.fields.assignee else None
+
+def get_jira_status(issue):
+
+    return issue.fields.status.name
+
+
 
 def get_jira_issue_information(issue):
     
@@ -156,21 +186,23 @@ def create_OR_jira_jql_query(param_name, issue_keys) -> str:
 
 def get_sprints():
 
-    return parse_cmd_args()[3]
+    return parse_cmd_args()[4]
 
 def parse_cmd_args() -> Tuple[List[str], List[str]]:
     parser = argparse.ArgumentParser(description="Check for --epic and --issue arguments")
 
     parser.add_argument("--epics", nargs="*", help="List of epic arguments", default=[])
     parser.add_argument("--issues", nargs="*", help="List of issue arguments", default=[])
-    parser.add_argument("--update", action="store_true", help="Update issues flag")
+    parser.add_argument("--update-notion", action="store_true", help="Update issues flag")
+    parser.add_argument("--update-jira", action="store_true", help="Update issues flag")
     parser.add_argument("--sprints", nargs='*', default=None, help="Describe which sprints shall be updated. E.g. cavors-91 cavors-92")
                         
     args = parser.parse_args()
 
     epic_args = args.epics
     issue_args = args.issues
-    update = args.update
+    update_notion = args.update_notion
+    update_jira= args.update_jira
     sprints = args.sprints
 
-    return epic_args, issue_args, update, sprints
+    return epic_args, issue_args, update_notion, update_jira, sprints

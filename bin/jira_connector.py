@@ -2,6 +2,48 @@ from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.config import *
 
+def update_jira_issue_status_and_assignee(jira_client, issue_key, status, assignee_name):
+
+    try:
+        issue = jira_client.issue(issue_key)
+
+        # Search for the assignee using a part of their name
+        users = jira_client.search_users(assignee_name)
+        if not users:
+            print_info("No user of name '" + assignee_name + "' could be found. Skipping change for Issue '" + issue_key + "'")
+            return -1
+
+        assignee = users[0]
+
+        # Update the assignee
+        issue.update(assignee={"name": assignee.name})
+
+        # Get the available transitions for the issue
+        transitions = jira_client.transitions(issue)
+
+        transition_id = None
+
+        # Find the transition ID for the desired status
+        for transition in transitions:
+            if status and transition["name"].lower() == status.lower():
+                transition_id = transition["id"]
+                break
+                
+        if transition_id is None:
+            raise Exception(f"Error: Transition to status '{status}' not found.")
+
+        # Update the status
+        jira_client.transition_issue(issue, transition_id)
+
+        # Fetch the updated issue data
+        updated_issue = jira_client.issue(issue_key)
+        return updated_issue.fields.__dict__
+    
+    except Exception as e:
+        print_info("Unable to update Jira Issue for Issue '" + issue_key + "'")
+        return -1
+
+
 def get_all_jira_issues_for_query(jira, query):
 
     all_issues = []
