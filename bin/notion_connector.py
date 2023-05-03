@@ -169,17 +169,27 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
 
         while not successfully_updated:
             try:
-                notion_client.pages.update(
-                    notion_page_id,
-                    properties={
-                        "Status": {"status": {"name": issue_status}},
-                        "Sprint": {"relation": sprint_pages},
-                        "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
-                        "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}},
-                        "Assignee": {"select": {"name": get_jira_assigned_person(jira_issue)}}
-
-                    }
-                )
+                if get_jira_assigned_person(jira_issue):
+                    notion_client.pages.update(
+                        notion_page_id,
+                        properties={
+                            "Status": {"status": {"name": issue_status}},
+                            "Sprint": {"relation": sprint_pages},
+                            "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
+                            "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}},
+                            "Assignee": {"select": {"name": get_jira_assigned_person(jira_issue)}}
+                        }
+                    )
+                else:
+                    notion_client.pages.update(
+                        notion_page_id,
+                        properties={
+                            "Status": {"status": {"name": issue_status}},
+                            "Sprint": {"relation": sprint_pages},
+                            "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
+                            "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}}
+                        }
+                    )
                 successfully_updated = True
 
             except Exception as e:
