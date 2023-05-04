@@ -185,6 +185,10 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
     amount_skipped_issues = 0
     skipped_issues = []
 
+    if len(update_notion_issues) == 0:
+        print_info("Not outdates Jira Issues found")
+        return
+    
     # Update Jira issues
     for notion_issue in tqdm(updated_notion_issues, "Updating existing Jira issues ... "):
 
