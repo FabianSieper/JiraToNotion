@@ -206,6 +206,7 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
 
 def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints_database_id):
 
+    global NOTION_TEXT_FIELD_MAX_CHARS
     updated_notion_issues = []
 
     notion_issues_dict = {issue['properties']['ISPI']['rich_text'][0]['text']['content'] : issue for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0}
@@ -263,6 +264,8 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
 
 def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_database_id):
 
+    global NOTION_TEXT_FIELD_MAX_CHARS
+    
     updated_jira_issues = []
 
     notion_issues_dict = {issue['properties']['ISPI']['rich_text'][0]['text']['content'] : issue for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0}

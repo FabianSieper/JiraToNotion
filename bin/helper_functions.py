@@ -12,6 +12,7 @@ def throw_error(text):
     exit()
 
 def map_team_identifer_to_string(team_identifier):
+    global KOBRA_IDENTIFIER
 
     if team_identifier == KOBRA_IDENTIFIER:
         return "Kobra"
@@ -62,6 +63,9 @@ def get_jira_status(issue):
 
 def get_jira_issue_information(issue):
     
+    global NOTION_TEXT_FIELD_MAX_CHARS
+    global JIRA_SERVER_URL
+
     issue_ispi = issue.key
     issue_summary = issue.fields.summary
     issue_status = issue.fields.status.name
@@ -163,6 +167,7 @@ def get_notion_ISPI_filter(ispis):
 
 def create_OR_jira_jql_query(param_name, issue_keys) -> str:
 
+    global KOBRA_IDENTIFIER
     query = ""
 
     if issue_keys:

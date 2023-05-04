@@ -7,6 +7,16 @@ import os
 
 def setup():
 
+    global JIRA_PASSWORD
+    global JIRA_USERNAME
+    global JIRA_SERVER_URL
+    global ISSUES_DATABASE_NAME
+    global ISSUES_DATABASE_URL
+    global SPRINTS_DATABASE_NAME
+    global SPRINTS_DATABASE_URL
+    global EPICS_DATABASE_NAME
+    global EPICS_DATABASE_URL
+
     # Fetch environment variables
     if "NOTION_API_KEY" in os.environ:    
         NOTION_API_KEY = os.environ["NOTION_API_KEY"]
