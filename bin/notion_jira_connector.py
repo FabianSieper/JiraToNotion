@@ -172,9 +172,9 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
         print_info("Updating " + notion_ispi + ": " + notion_summary)
         print_info("\tStatus:")
         print_info("\t\tWas:\t\t" + jira_status)
-        print_info("\t\tWill be:\t" + notion_status)
+        print_info("\t\tWill be:\t" + notion_status if notion_status else "\t\tWill be:\tNone")
         print_info("\tAssignee:")
-        print_info("\t\tWas:\t\t" + jira_assignee)
+        print_info("\t\tWas:\t\t" + jira_assignee if jira_assignee else "\t\tWas:\t\tNone")
         print_info("\t\tWill be:\t" + notion_assignee if notion_assignee != "Unassigned" else "\t\tWill be:\t" + get_jira_assigned_person(jira_issues_dict[notion_ispi]))
 
     continue_answer = input("Do you want to continue? Enter 'Yes' to continue ...\n")
