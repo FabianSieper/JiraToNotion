@@ -129,8 +129,7 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         new_epic_page = {
             "Name": {"title": [{"text": {"content": summary}}]},
             "URL": {"url": url},
-            "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]},
-            "Description": {"rich_text": [{"text": {"content": description if description else ""}}]},
+            "ISPI": {"rich_text": [{"text": {"content": epic_ispi}}]}
         }
 
         new_epic_page = create_notion_page(notion_client, epic_database_id, new_epic_page)

@@ -163,7 +163,7 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
     successfully_updated = False
 
     if notion_page_id:
-        # Update properties: "Status", "Sprint", "Description" property
+        # Update properties: "Status", "Sprint" property
         _, _, issue_status, issue_description, _, _, issue_sprints, _, _ = get_jira_issue_information(jira_issue)
         sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints] if issue_sprints else []
 
@@ -175,7 +175,6 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
                         properties={
                             "Status": {"status": {"name": issue_status}},
                             "Sprint": {"relation": sprint_pages},
-                            "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
                             "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}},
                             "Assignee": {"select": {"name": get_jira_assigned_person(jira_issue)}}
                         }
@@ -186,7 +185,6 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
                         properties={
                             "Status": {"status": {"name": issue_status}},
                             "Sprint": {"relation": sprint_pages},
-                            "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
                             "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}}
                         }
                     )
@@ -290,15 +288,6 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         sprint_pages_names_notion = [get_or_create_sprint_page(notion_client, sprints_database_id, None, sprint_page_notion["id"])['properties']['Name']['title'][0]['plain_text'] for sprint_page_notion in sprint_pages_notion]
 
         if jira_sprints != sprint_pages_names_notion:
-            updated_jira_issues.append(jira_issue)
-            continue
-
-        # Check for changed description
-        jira_description = get_jira_issue_information(jira_issue)[3]
-        capped_jira_description = jira_description[0:NOTION_TEXT_FIELD_MAX_CHARS] if jira_description else ""
-        notion_description = notion_issue['properties']['Description']['rich_text'][0]['plain_text'] if notion_issue['properties']['Description']['rich_text'] else ""
-
-        if capped_jira_description != notion_description:
             updated_jira_issues.append(jira_issue)
             continue
 
