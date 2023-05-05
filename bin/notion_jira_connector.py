@@ -58,7 +58,6 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
             "Summary": {"title": [{"text": {"content": issue_summary}}]},
             "Status": {"status": {"name": issue_status}},
             "URL": {"url": issue_url},
-            "Description": {"rich_text": [{"text": {"content": issue_description if issue_description else ""}}]},
             "ISPI": {"rich_text": [{"text": {"content": issue_ispi}}]},
             "Priority": {"select": {"name": str(issue_priority)}},
             "Sprint": {"relation": sprint_pages},
