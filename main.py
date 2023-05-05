@@ -16,7 +16,8 @@ def setup():
     global SPRINTS_DATABASE_URL
     global EPICS_DATABASE_NAME
     global EPICS_DATABASE_URL
-
+    global NOTION_API_KEY
+    
     # Fetch environment variables
     if "NOTION_API_KEY" in os.environ:    
         NOTION_API_KEY = os.environ["NOTION_API_KEY"]
