@@ -59,34 +59,36 @@ def get_jira_status(issue):
 
     return issue.fields.status.name
 
+def get_jira_summary(issue):
 
+    return issue.fields.summary
 
-def get_jira_issue_information(issue):
-    
-    global NOTION_TEXT_FIELD_MAX_CHARS
-    global JIRA_SERVER_URL
+def get_jira_status(issue):
 
-    issue_ispi = issue.key
-    issue_summary = issue.fields.summary
-    issue_status = issue.fields.status.name
-    issue_description = issue.fields.description 
-    issue_priority = issue.fields.priority
-    issue_sprints = [s.split('name=')[1].split(',')[0] for s in issue.fields.customfield_10000] if issue.fields.customfield_10000 else None
-    issue_url = JIRA_SERVER_URL + "/browse/" + issue_ispi
-    epic_ispi = issue.fields.customfield_10001
-    issue_assignee = issue.fields.assignee.displayName if issue.fields.assignee else ""
+    return issue.fields.status.name
 
+def get_jira_url(issue):
 
-    # Description is only allowed to be <= NOTION_TEXT_FIELD_MAX_CHARS symbols in Notion text field
-    if issue_description and len(issue_description) > NOTION_TEXT_FIELD_MAX_CHARS:
-        issue_description = issue_description[0:NOTION_TEXT_FIELD_MAX_CHARS]
+    return JIRA_SERVER_URL + "/browse/" + get_jira_ispi(issue)
 
-    return issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi, issue_assignee
+def get_jira_priority(issue):
+
+    return issue.fields.priority
+
+def get_jira_sprints(issue):
+
+    return [s.split('name=')[1].split(',')[0] for s in issue.fields.customfield_10000] if issue.fields.customfield_10000 else None
+
+def get_jira_epic_ispi(issue):
+
+    return issue.fields.customfield_10001
+
 
 
 def isIssueSkipped(issue, existing_titles):
 
-    issue_ispi, issue_summary, _, _, _, _, _, _, _ = get_jira_issue_information(issue)
+    issue_ispi = get_jira_ispi(issue)
+    issue_summary = get_jira_summary(issue)
 
     # Skip if issue was already sent to notion
     if issue_ispi in existing_titles:
@@ -98,7 +100,14 @@ def isIssueSkipped(issue, existing_titles):
 
 def print_issue_information(issue, advanced = False):
 
-    issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, issue_epic, issue_assignee = get_jira_issue_information(issue)
+    issue_ispi          = get_jira_ispi(issue)
+    issue_summary       = get_jira_summary(issue)
+    issue_status        = get_jira_status(issue)
+    issue_url           = get_jira_url(issue)
+    issue_priority      = get_jira_priority(issue)
+    issue_sprints       = get_jira_sprints(issue)
+    issue_epic          = get_jira_epic_ispi(issue)
+    issue_assignee      = get_jira_assigned_person(issue)
 
     print("ISPI:", issue_ispi)
     print("Issue summary:", issue_summary)
@@ -107,11 +116,12 @@ def print_issue_information(issue, advanced = False):
     print("Priority:", issue_priority)
     print("Status:", issue_status)
     print("Epic:", issue_epic)
-    print("Description:", issue_description)  
+    print("Assignee:", issue_assignee)
 
     if advanced:
         for field_name, field_value in issue.fields.__dict__.items():
             print(f"{field_name}: {field_value}")
+
 
 def get_notion_sprint_filter():
 

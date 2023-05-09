@@ -164,7 +164,9 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
 
     if notion_page_id:
         # Update properties: "Status", "Sprint" property
-        _, _, issue_status, issue_description, _, _, issue_sprints, _, _ = get_jira_issue_information(jira_issue)
+        issue_status = get_jira_status(jira_issue)
+        issue_sprints = get_jira_sprints(jira_issue)
+
         sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints] if issue_sprints else []
 
         while not successfully_updated:
@@ -222,22 +224,13 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
             continue
 
         # Check for changed sprints    
-        jira_sprints = get_jira_issue_information(jira_issue)[6]
+        jira_sprints = get_jira_sprints(jira_issue)
         jira_sprints = jira_sprints if jira_sprints else []
 
         sprint_pages_notion = notion_issue['properties']['Sprint']['relation']
         sprint_pages_names_notion = [get_or_create_sprint_page(notion_client, sprints_database_id, None, sprint_page_notion["id"])['properties']['Name']['title'][0]['plain_text'] for sprint_page_notion in sprint_pages_notion]
 
         if jira_sprints != sprint_pages_names_notion:
-            updated_notion_issues.append(notion_issue)
-            continue
-
-        # Check for changed description
-        jira_description = get_jira_issue_information(jira_issue)[3]
-        capped_jira_description = jira_description[0:NOTION_TEXT_FIELD_MAX_CHARS] if jira_description else ""
-        notion_description = notion_issue['properties']['Description']['rich_text'][0]['plain_text'] if notion_issue['properties']['Description']['rich_text'] else ""
-
-        if capped_jira_description != notion_description:
             updated_notion_issues.append(notion_issue)
             continue
 
@@ -273,7 +266,7 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         notion_issue = notion_issues_dict[jira_issue.key]
 
         # Check for changed status
-        jira_status = jira_issue.fields.status.name
+        jira_status = get_jira_status(jira_issue)
         notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
 
         if jira_status != notion_status:
@@ -281,7 +274,7 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
             continue
 
         # Check for changed sprints    
-        jira_sprints = get_jira_issue_information(jira_issue)[6]
+        jira_sprints = get_jira_sprints(jira_issue)
         jira_sprints = jira_sprints if jira_sprints else []
 
         sprint_pages_notion = notion_issue['properties']['Sprint']['relation']

@@ -36,7 +36,13 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
     # Add JIRA issues to the Notion database if not already present
     for issue in tqdm(issues, "Writing issues to notion database ..."):
 
-        issue_ispi, issue_summary, issue_status, issue_description, issue_url, issue_priority, issue_sprints, epic_ispi, issue_assignee = get_jira_issue_information(issue)
+        issue_ispi          = get_jira_ispi(issue)
+        issue_summary       = get_jira_summary(issue)
+        issue_status        = get_jira_status(issue)
+        issue_url           = get_jira_url(issue)
+        issue_priority      = get_jira_priority(issue)
+        issue_sprints       = get_jira_sprints(issue)
+        epic_ispi           = get_jira_epic_ispi(issue)
 
         # Skip issues
         if isIssueSkipped(issue, existing_ispis):
@@ -124,7 +130,8 @@ def get_or_create_epic_page(jira, notion_client, epic_database_id, epic_ispi):
         print_info("Creating new epic page in Notion")
         epic = get_jira_issue_list_from_ispis(jira, epic_ispi, isEpic=True, convert_to_ispi_strings=False)[0]
 
-        _, summary, _, description, url, _, _, _, _ = get_jira_issue_information(epic)
+        summary = get_jira_summary(epic)
+        url = get_jira_url(epic)
 
         new_epic_page = {
             "Name": {"title": [{"text": {"content": summary}}]},
@@ -183,7 +190,7 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
     amount_skipped_issues = 0
     skipped_issues = []
 
-    if len(update_notion_issues) == 0:
+    if len(updated_notion_issues) == 0:
         print_info("Not outdates Jira Issues found")
         return
     
