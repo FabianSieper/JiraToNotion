@@ -219,7 +219,8 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
         jira_status = jira_issue.fields.status.name
         notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
 
-        if jira_status != notion_status:
+        # No difference shall be made between "Resolved" in JIRA and "Closed" in Notion -> A "Closed" issue in Notion will always be set as "Resolved" in JIRA
+        if jira_status != notion_status and jira_status != "Resolved" and notion_status != "Closed":
             updated_notion_issues.append(notion_issue)
             continue
 
@@ -246,7 +247,8 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
         jira_assigned_person = get_jira_assigned_person(jira_issue)
         notion_assigned_person = notion_issue['properties']['Assignee']['select']['name'] if notion_issue['properties']['Assignee']['select'] else None
 
-        if notion_assigned_person and jira_assigned_person != notion_assigned_person:
+        # A change in the assigne person shall only be relevant, if the status of the issue is not "resolved" or "closed"
+        if notion_assigned_person and jira_assigned_person != notion_assigned_person and jira_status != "Resolved" and notion_status != "Closed":
             updated_notion_issues.append(notion_issue)
             continue
 

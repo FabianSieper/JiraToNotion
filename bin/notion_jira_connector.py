@@ -199,7 +199,7 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
 
         notion_assignee = get_assignee_from_notion_issue(notion_issue)
         notion_status = get_status_from_notion_issue(notion_issue)
-
+        
         jira_status = get_jira_status(jira_issues_dict[notion_ispi])
         jira_assignee = get_jira_assigned_person(jira_issues_dict[notion_ispi])
 

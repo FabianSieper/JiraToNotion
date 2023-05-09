@@ -13,8 +13,11 @@ def update_jira_issue_status_and_assignee(jira_client, issue, status, assignee_n
             if not users:
                 print_info("No user of name '" + assignee_name + "' could be found. Skipping change for Issue '" + issue.key + "'")
                 return -1
-
+            
             assignee = users[0]
+            # There are two "Patrick Fischer" - use the correct one
+            if "Patrick Fischer" in assignee_name and len(users) > 1:
+                assignee.name = "qxz10vd"
 
             # Update the assignee
             print_info("Upding Jira Issue with assignee")
