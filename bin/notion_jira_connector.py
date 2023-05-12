@@ -27,7 +27,7 @@ def get_issue_list_from_notion_epics(jira, notion_client, epic_database_id):
 
 def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic_database_id, issues, existing_ispis):
     
-    global amount_issues_skipped
+    skipped_issues = []
 
     if issues == -1:
         print_info("No pages were added to Notion.")
@@ -38,7 +38,7 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 
         issue_ispi          = get_jira_ispi(issue)
         issue_summary       = get_jira_summary(issue)
-        issue_status        = get_jira_status(issue)
+        issue_status        = get_jira_status_name(issue)
         issue_url           = get_jira_url(issue)
         issue_priority      = get_jira_priority(issue)
         issue_sprints       = get_jira_sprints(issue)
@@ -46,7 +46,7 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 
         # Skip issues
         if isIssueSkipped(issue, existing_ispis):
-            amount_issues_skipped += 1
+            skipped_issues.append(issue)
             continue
 
         # Get or create sprint pages in the sprints database, but only if Sprint name has prefix 
@@ -77,7 +77,7 @@ def add_notion_entries_loop(jira, notion, database_id, sprints_database_id, epic
 
         notion.pages.create(parent={"database_id": database_id}, properties=new_page).get("id")
 
-    return amount_issues_skipped
+    return skipped_issues
 
 
 def add_missing_notion_issues(jira_client, notion_client, issue_database_id, epic_database_id, sprints_database_id, notion_issues):
@@ -156,35 +156,18 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
         print_info("No jira issues found fo the given filter")
         return
     
-    jira_issues_dict = {get_jira_ispi(jira_issue): jira_issue for jira_issue in jira_issues}
-
     # Get list of Notion Issues, which have been updated
     updated_notion_issues = get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints_database_id)
+
+    if len(updated_notion_issues) == 0:
+        print_info("No outdated Jira issues were found.")
+        return
+    
     print_info("Found outdated Jira issues: " + str(len(updated_notion_issues)))
 
-    print_info("The following Issues will be updated in Jira: ")
-    for notion_issue in updated_notion_issues:
+    is_update = update_jira_issues_message(updated_notion_issues, jira_issues)
 
-        notion_assignee = get_assignee_from_notion_issue(notion_issue)
-        notion_status = get_status_from_notion_issue(notion_issue)
-        notion_ispi = get_ispi_from_notion_issue(notion_issue)
-        notion_summary = get_summary_from_notion_issue(notion_issue)
-
-        jira_status = get_jira_status(jira_issues_dict[notion_ispi])
-        jira_assignee = get_jira_assigned_person(jira_issues_dict[notion_ispi])
-
-        print_info("")
-        print_info("Updating " + notion_ispi + ": " + notion_summary)
-        print_info("\tStatus:")
-        print_info("\t\tWas:\t\t" + jira_status)
-        print_info("\t\tWill be:\t" + notion_status)
-        print_info("\tAssignee:")
-        print_info("\t\tWas:\t\t" + jira_assignee if jira_assignee else "\t\tWas:\t\tNone")
-        print_info("\t\tWill be:\t" + notion_assignee if notion_assignee != "Unassigned" else "\t\tWill be:\t" + jira_assignee)
-
-    continue_answer = input("Do you want to continue? Enter 'Yes' to continue ...\n")
-    if continue_answer != "Yes":
-        print_info("NOT updating Jira Issues!")
+    if not is_update:
         return
 
     amount_skipped_issues = 0
@@ -194,13 +177,16 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
         print_info("Not outdates Jira Issues found")
         return
     
+    jira_issues_dict = {get_jira_ispi(jira_issue): jira_issue for jira_issue in jira_issues}
+
     # Update Jira issues
     for notion_issue in tqdm(updated_notion_issues, "Updating existing Jira issues ... "):
 
         notion_assignee = get_assignee_from_notion_issue(notion_issue)
         notion_status = get_status_from_notion_issue(notion_issue)
-        
-        jira_status = get_jira_status(jira_issues_dict[notion_ispi])
+        notion_ispi = get_ispi_from_notion_issue(notion_issue)
+
+        jira_status = get_jira_status_name(jira_issues_dict[notion_ispi])
         jira_assignee = get_jira_assigned_person(jira_issues_dict[notion_ispi])
 
         ispi = get_ispi_from_notion_issue(notion_issue)
@@ -209,8 +195,8 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
                                                        jira_issues_dict[ispi], 
                                                        notion_status, 
                                                        notion_assignee,
-                                                       update_jira_status = jira_status != notion_status,
-                                                       update_jira_assignee = notion_assignee and jira_assignee != notion_assignee )
+                                                       is_update_jira_status = jira_status != notion_status,
+                                                       is_update_jira_assignee = notion_assignee and jira_assignee != notion_assignee )
 
     if result == -1:
         amount_skipped_issues += 1
@@ -223,7 +209,6 @@ def update_jira_issues(notion_client, jira_client, sprints_database_id, notion_i
 
 
 def update_existing_notion_issues(notion_client, jira_client, database_id, sprints_database_id, notion_issues):
-
 
     notion_issues_ispis = [issue['properties']['ISPI']['rich_text'][0]['text']['content'] for issue in notion_issues if len(issue['properties']['ISPI']['rich_text']) > 0]
 

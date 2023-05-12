@@ -164,7 +164,7 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
 
     if notion_page_id:
         # Update properties: "Status", "Sprint" property
-        issue_status = get_jira_status(jira_issue)
+        issue_status = get_jira_status_name(jira_issue)
         issue_sprints = get_jira_sprints(jira_issue)
 
         sprint_pages = [{"id": get_or_create_sprint_page(notion_client, sprints_database_id, sprint)["id"]} for sprint in issue_sprints] if issue_sprints else []
@@ -220,7 +220,7 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
         notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
 
         # No difference shall be made between "Resolved" in JIRA and "Closed" in Notion -> A "Closed" issue in Notion will always be set as "Resolved" in JIRA
-        if jira_status != notion_status and jira_status != "Resolved" and notion_status != "Closed":
+        if jira_status != notion_status and not (jira_status == "Resolved" and notion_status == "Closed"):
             updated_notion_issues.append(notion_issue)
             continue
 
@@ -248,7 +248,7 @@ def get_updated_notion_issues(notion_client, jira_issues, notion_issues, sprints
         notion_assigned_person = notion_issue['properties']['Assignee']['select']['name'] if notion_issue['properties']['Assignee']['select'] else None
 
         # A change in the assigne person shall only be relevant, if the status of the issue is not "resolved" or "closed"
-        if notion_assigned_person and jira_assigned_person != notion_assigned_person and jira_status != "Resolved" and notion_status != "Closed":
+        if notion_assigned_person and jira_assigned_person != notion_assigned_person and (jira_status != "Resolved" or notion_status != "Closed"):
             updated_notion_issues.append(notion_issue)
             continue
 
@@ -268,10 +268,10 @@ def get_updated_jira_issues(notion_client, jira_issues, notion_issues, sprints_d
         notion_issue = notion_issues_dict[jira_issue.key]
 
         # Check for changed status
-        jira_status = get_jira_status(jira_issue)
+        jira_status = get_jira_status_name(jira_issue)
         notion_status = notion_issue['properties']['Status']['status']['name'] if "Status" in notion_issue['properties'] else None
 
-        if jira_status != notion_status:
+        if jira_status != notion_status and not (jira_status.lower() == "resolved" and notion_status.lower() == "closed"):
             updated_jira_issues.append(jira_issue)
             continue
 

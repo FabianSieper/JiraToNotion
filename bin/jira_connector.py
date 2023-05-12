@@ -2,80 +2,80 @@ from bin.helper_functions import *
 from bin.notion_connector import *
 from bin.config import *
 
-def update_jira_issue_status_and_assignee(jira_client, issue, status, assignee_name, update_jira_status = True, update_jira_assignee = True):
+
+def get_jira_resolve_done_transition(jira_client, issue):
+    possible_transitions = jira_client.transitions(issue)
+    resolve_transition = [transition for transition in possible_transitions if transition["name"] == "Resolve"]
+    return resolve_transition[0] if resolve_transition else None
+
+
+# This function shall be used if the status which the issue shall be set to is "Closed"
+def set_jira_status_to_done(jira_client, issue):
+
+    done_transition = get_jira_resolve_done_transition(jira_client, issue)
+     
+    if done_transition is None:
+        raise Exception(f"Error: Transition to status 'resolve' not possible.")
+
+    # Update the status
+    print_info("Transitioning status of Issue")
+    jira_client.transition_issue(issue, done_transition["id"], fields={"resolution": {"name": "Done"}})
+
+
+# This function shall be used if the status which the issue shall be set to is NOT "Closed"
+def update_jira_issue_default(jira_client, issue, status):
+
+    # Get the available transitions for the issue
+    print_info("Gathering possible transitions")
+    possible_transitions = jira_client.transitions(issue)
+
+    # Find the transition ID for the desired status
+
+    transition = [transition for transition in possible_transitions if transition["name"].lower() == status.lower()]
+
+    if transition is None:
+        raise Exception(f"Error: Transition to status '{status}' not found.")
+
+    # Update the status
+    print_info("Transitioning status of Issue")
+    jira_client.transition_issue(issue, transition["id"])
+
+
+def update_jira_assignee(jira_client, assignee_name, issue):
+
+    # Search for the assignee using a part of their name
+    print_info("Searching Jira users from name")
+    users = jira_client.search_users(assignee_name)
+    if not users:
+        print_info("No user of name '" + assignee_name + "' could be found. Skipping change for Issue '" + issue.key + "'")
+        return -1
+    
+    assignee = users[0]
+    # There are two "Patrick Fischer" - use the correct one
+    if "Patrick Fischer" in assignee_name and len(users) > 1:
+        assignee.name = "qxz10vd"
+
+    # Update the assignee
+    print_info("Upding Jira Issue with assignee")
+    issue.update(assignee={"name": assignee.name})
+
+
+def update_jira_issue_status_and_assignee(jira_client, issue, status, assignee_name, is_update_jira_status = True, is_update_jira_assignee = True):
 
     try:
 
-        if update_jira_assignee:
-            # Search for the assignee using a part of their name
-            print_info("Searching Jira users from name")
-            users = jira_client.search_users(assignee_name)
-            if not users:
-                print_info("No user of name '" + assignee_name + "' could be found. Skipping change for Issue '" + issue.key + "'")
-                return -1
-            
-            assignee = users[0]
-            # There are two "Patrick Fischer" - use the correct one
-            if "Patrick Fischer" in assignee_name and len(users) > 1:
-                assignee.name = "qxz10vd"
+        if is_update_jira_assignee:
 
-            # Update the assignee
-            print_info("Upding Jira Issue with assignee")
-            issue.update(assignee={"name": assignee.name})
+            update_jira_assignee(jira_client, assignee_name, issue)
 
-        if update_jira_status:
-            transition_id = None
+        if is_update_jira_status:
 
             # If status is "Closed", some transitions have to be done first
             if status and status.lower() == "closed":
-                # Setting status "Done" by at first setting status "Resolved"
-                # Get the available transitions for the issue
-                print_info("Gathering possible transitions")
-                transitions = jira_client.transitions(issue)
-
-                # Find the transition ID for the desired status
-                for transition in transitions:
-            
-                    if status and transition["name"].lower() == "resolve":
-                        transition_id = transition["id"]
-                        break
-                                    
-                if transition_id is None:
-                    raise Exception(f"Error: Transition to status 'resolve' not found.")
-                
-                # Transitioning to "Done"
-                # Get the available transitions for the issue
-                print_info("Gathering possible transitions")
-                transitions = jira_client.transitions(issue)
-
-                # Find the transition ID for the desired status
-                for transition in transitions:
-            
-                    if status and transition["name"].lower() == "done":
-                        transition_id = transition["id"]
-                        break
-                                    
-                if transition_id is None:
-                    raise Exception(f"Error: Transition to status 'done' not found.")
+                set_jira_status_to_done(jira_client, issue)
 
             else:
-                # Get the available transitions for the issue
-                print_info("Gathering possible transitions")
-                transitions = jira_client.transitions(issue)
-
-                # Find the transition ID for the desired status
-                for transition in transitions:
-            
-                    if status and transition["name"].lower() == status.lower():
-                        transition_id = transition["id"]
-                        break
-                        
-                if transition_id is None:
-                    raise Exception(f"Error: Transition to status '{status}' not found.")
-
-            # Update the status
-            print_info("Transitioning status of Issue")
-            jira_client.transition_issue(issue, transition_id)
+                update_jira_issue_default(jira_client, issue, status)
 
         return 1
     

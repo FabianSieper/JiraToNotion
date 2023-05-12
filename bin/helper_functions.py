@@ -55,7 +55,7 @@ def get_jira_assigned_person(issue):
 
     return issue.fields.assignee.displayName if issue.fields.assignee else None
 
-def get_jira_status(issue):
+def get_jira_status_name(issue):
 
     return issue.fields.status.name
 
@@ -63,8 +63,13 @@ def get_jira_summary(issue):
 
     return issue.fields.summary
 
-def get_jira_status(issue):
+def get_jira_status_name(issue):
 
+    status = issue.fields.status.name
+
+    if status.lower() == "resolved":
+        return "Closed"
+    
     return issue.fields.status.name
 
 def get_jira_url(issue):
@@ -102,7 +107,7 @@ def print_issue_information(issue, advanced = False):
 
     issue_ispi          = get_jira_ispi(issue)
     issue_summary       = get_jira_summary(issue)
-    issue_status        = get_jira_status(issue)
+    issue_status        = get_jira_status_name(issue)
     issue_url           = get_jira_url(issue)
     issue_priority      = get_jira_priority(issue)
     issue_sprints       = get_jira_sprints(issue)
@@ -221,3 +226,35 @@ def parse_cmd_args() -> Tuple[List[str], List[str]]:
     sprints = args.sprints
 
     return epic_args, issue_args, update_notion, update_jira, sprints
+
+
+def update_jira_issues_message(updated_notion_issues, jira_issues):
+
+    jira_issues_dict = {get_jira_ispi(jira_issue): jira_issue for jira_issue in jira_issues}
+
+    print_info("The following Issues will be updated in Jira: ")
+    for notion_issue in updated_notion_issues:
+
+        notion_assignee = get_assignee_from_notion_issue(notion_issue)
+        notion_status = get_status_from_notion_issue(notion_issue)
+        notion_ispi = get_ispi_from_notion_issue(notion_issue)
+        notion_summary = get_summary_from_notion_issue(notion_issue)
+
+        jira_status = get_jira_status_name(jira_issues_dict[notion_ispi])
+        jira_assignee = get_jira_assigned_person(jira_issues_dict[notion_ispi])
+
+        print_info("")
+        print_info("Updating " + notion_ispi + ": " + notion_summary)
+        print_info("\tStatus:")
+        print_info("\t\tWas:\t\t" + jira_status)
+        print_info("\t\tWill be:\t" + notion_status)
+        print_info("\tAssignee:")
+        print_info("\t\tWas:\t\t" + jira_assignee if jira_assignee else "\t\tWas:\t\tNone")
+        print_info("\t\tWill be:\t" + notion_assignee if notion_assignee != "Unassigned" else "\t\tWill be:\t" + jira_assignee)
+
+    continue_answer = input("Do you want to continue? Enter 'Yes' to continue ...\n")
+    if continue_answer != "Yes":
+        print_info("NOT updating Jira Issues!")
+        return False
+    
+    return True
