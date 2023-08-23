@@ -19,13 +19,11 @@ To configure the script to your Jira and Notion databases, replace the following
 - EPICS_DATABASE_URL: The URL of your Epics database in Notion
 - EPICS_DATABASE_NAME: The name of your Epics database in Notion (default: "Epics")
 - JIRA_SERVER_URL: Your JIRA server URL
-- JIRA_USERNAME: Your JIRA username
-- JIRA_PASSWORD: Your JIRA password
+- JIRA_AUTH_TOKEN: Jira auth token, which can be created in JIRA under "profile > Personal Access Tokens"
 
 Some of these values can also be set by creating equally named environment variables. Supported variables:
 - NOTION_API_KEY
-- JIRA_USERNAME
-- JIRA_PASSWORD
+- JIRA_AUTH_TOKEN
 
 ## Execution and Modes
 

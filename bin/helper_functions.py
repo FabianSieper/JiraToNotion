@@ -6,6 +6,13 @@ def print_info(text):
 
     print("[INFO] -", text)
 
+def print_warning(text, wait_for_user_input=False):
+
+    print("[WARNING] -", text)
+
+    if wait_for_user_input:
+        input("Press any key to continue ...")
+
 def throw_error(text):
 
     print("[ERROR] -", text)
@@ -62,6 +69,10 @@ def get_jira_status_name(issue):
 def get_jira_summary(issue):
 
     return issue.fields.summary
+
+def get_jira_acceptance_criterias(issue):
+
+    return issue.fields.customfield_11100
 
 def get_jira_status_name(issue):
 

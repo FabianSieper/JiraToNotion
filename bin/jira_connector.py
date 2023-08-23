@@ -3,10 +3,28 @@ from bin.notion_connector import *
 from bin.config import *
 
 
+
 def get_jira_resolve_done_transition(jira_client, issue):
     possible_transitions = jira_client.transitions(issue)
     resolve_transition = [transition for transition in possible_transitions if transition["name"] == "Resolve"]
     return resolve_transition[0] if resolve_transition else None
+
+
+def check_all_acceptance_criterias(issue):
+    acceptance_criterias = get_jira_acceptance_criterias(issue)
+    for crit in acceptance_criterias:
+        crit.checked = True
+    return [crit.__dict__ for crit in acceptance_criterias]
+
+
+def update_acceptance_criterias(issue):
+    acceptance_criterias = check_all_acceptance_criterias(issue)
+    issue.update(fields={"customfield_11100": acceptance_criterias})
+
+
+def update_acceptance_criterias(issue):
+    acceptance_criterias = list(check_all_acceptance_criterias(issue))
+    issue.update(fields={"customfield_11100": acceptance_criterias})
 
 
 # This function shall be used if the status which the issue shall be set to is "Closed"
@@ -18,9 +36,12 @@ def set_jira_status_to_done(jira_client, issue):
         raise Exception(f"Error: Transition to status 'resolve' not possible.")
 
     # Update the status
-    print_info("Transitioning status of Issue")
+    print_info("Transitioning status of Issue to 'Done'")
     jira_client.transition_issue(issue, done_transition["id"], fields={"resolution": {"name": "Done"}})
 
+    # Check all checkboxes
+    print_info("Checking all acceptance criterias")
+    update_acceptance_criterias(issue)
 
 # This function shall be used if the status which the issue shall be set to is NOT "Closed"
 def update_jira_issue_default(jira_client, issue, status):
@@ -94,11 +115,11 @@ def get_all_jira_issues_for_query(jira, query):
     while True:
         try:
             issues = jira.search_issues(query, startAt=start_at, maxResults=max_results)
-        except Exception:
+        except Exception as e:
+            print(e)
             print_info("Not able to search for issue with query: " + str(query))
-            print_info("Returning empty list.")
             return []
-        
+
         if not issues:
             break
 
