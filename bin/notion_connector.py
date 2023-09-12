@@ -112,7 +112,11 @@ def get_database_id(notion_client, database_url, database_name):
     database_names = [result["title"][0]["plain_text"] for result in database_result]
 
     # Get Index of correct name
-    database_index = database_names.index(database_name)
+    try:
+        database_index = database_names.index(database_name)
+    except ValueError as e:
+        print_warning("Database with name '" + database_name + "' not found in available databases, accessable by Notion API key: " + str(database_names))
+        exit()
 
     if database_index == -1:
         print("[ERROR] - Could not find databse for name", database_name)
@@ -177,7 +181,6 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
                         properties={
                             "Status": {"status": {"name": issue_status}},
                             "Sprint": {"relation": sprint_pages},
-                            "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}},
                             "Assignee": {"select": {"name": get_jira_assigned_person(jira_issue)}}
                         }
                     )
@@ -187,7 +190,6 @@ def update_notion_issues(notion_client, database_id, sprints_database_id, jira_i
                         properties={
                             "Status": {"status": {"name": issue_status}},
                             "Sprint": {"relation": sprint_pages},
-                            "Team": {"select": {"name": get_jira_assigned_team(jira_issue)}}
                         }
                     )
                 successfully_updated = True
