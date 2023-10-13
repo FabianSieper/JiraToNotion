@@ -75,7 +75,7 @@ def main():
         existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, issue_list=issue_list, convert_to_ispis_strings=True)
 
         skipped_issues = add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
-        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues]
+        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues] if issue_list != -1 else []
         amount_issues_added = len(issues_added)
 
         if amount_issues_added > 0:
@@ -90,7 +90,7 @@ def main():
         existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, issue_list=issue_list, convert_to_ispis_strings=True)
 
         skipped_issues = add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
-        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues]
+        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues] if issue_list != -1 else []
         amount_issues_added = len(issues_added)
 
         if amount_issues_added > 0:
@@ -103,7 +103,7 @@ def main():
         existing_ispis = get_already_migrated_entries(notion_client, issue_database_id, issue_list=issue_list, convert_to_ispis_strings=True)
 
         skipped_issues = add_notion_entries_loop(jira_client, notion_client, issue_database_id, sprints_database_id, epic_database_id, issue_list, existing_ispis)
-        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues]
+        issues_added = [issue.key for issue in issue_list if issue not in skipped_issues] if issue_list != -1 else []
         amount_issues_added = len(issues_added)
 
         if amount_issues_added > 0:
